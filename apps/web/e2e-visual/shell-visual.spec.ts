@@ -173,6 +173,44 @@ test.describe('Shell visual regression', () => {
     await expect(page).toHaveScreenshot('settings-shell.png', { fullPage: true });
   });
 
+  test('learners shell', async ({ page }) => {
+    await mockAuthenticatedFamily(page);
+
+    await page.goto('/learners');
+    await expect(page.getByTestId('learners-list-container')).toBeVisible();
+    await expect(page).toHaveScreenshot('learners-shell.png', { fullPage: true });
+  });
+
+  test('devotional shell', async ({ page }) => {
+    await mockAuthenticatedFamily(page);
+
+    await page.route(`**/api/v1/families/${familyId}/devotionals/by-date**`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        json: {
+          id: 'devotional-1',
+          familyId,
+          date: '2026-01-05',
+          scriptureReference: 'Salmos 23:1-3',
+          scriptureText: 'O Senhor é o meu pastor; nada me faltará.',
+          bibleVersion: 'ARA',
+          reflection: 'Confiar no cuidado diário do Senhor.',
+          isGolden: true,
+          createdAt: '2026-01-05T00:00:00.000Z',
+          updatedAt: '2026-01-05T00:00:00.000Z',
+        },
+      });
+    });
+    await page.route(`**/api/v1/families/${familyId}/prayers**`, async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', json: [] });
+    });
+
+    await page.goto('/devotional');
+    await expect(page.getByTestId('devotional-view')).toBeVisible();
+    await expect(page).toHaveScreenshot('devotional-shell.png', { fullPage: true });
+  });
+
   test('curriculum shell', async ({ page }) => {
     await mockAuthenticatedFamily(page);
 

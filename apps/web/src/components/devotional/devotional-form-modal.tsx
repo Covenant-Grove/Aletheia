@@ -8,7 +8,7 @@ export interface DevotionalFormModalProps {
   isOpen: boolean;
   currentDate: string;
   initialData?: DailyDevotionalResponseDto | null;
-  familyId?: string;
+  familyId: string | null;
   onClose: () => void;
   onSubmit: (_data: UpsertDailyDevotionalDto) => Promise<void> | void;
 }
@@ -26,7 +26,7 @@ export function DevotionalFormModal({
   isOpen,
   currentDate,
   initialData,
-  familyId = 'family-current',
+  familyId,
   onClose,
   onSubmit,
 }: DevotionalFormModalProps) {
@@ -73,12 +73,16 @@ export function DevotionalFormModal({
       setError('Informe uma referência bíblica para buscar (ex: João 3:16 ou Salmos 23).');
       return;
     }
+    if (!familyId) {
+      setError('Família não autenticada.');
+      return;
+    }
 
     try {
       setLookupLoading(true);
       setError(null);
       const url = `/api/v1/families/${encodeURIComponent(familyId)}/devotionals/scripture/lookup?reference=${encodeURIComponent(bibleReference.trim())}&versionId=${encodeURIComponent(bibleVersionId)}`;
-      const res = await fetch(url);
+      const res = await fetch(url, { credentials: 'include' });
       if (!res.ok) {
         throw new Error('Não foi possível obter o texto bíblico. Digite o texto manualmente.');
       }

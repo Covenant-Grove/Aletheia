@@ -16,16 +16,24 @@ import { ProductShell } from '../../../src/components/product-shell';
 export interface DevotionalPageProps {
   initialDevotional?: DailyDevotionalResponseDto | null;
   initialPrayers?: PrayerResponseDto[];
-  familyId?: string;
   initialDate?: string;
 }
 
 export default function DevotionalPage({
   initialDevotional = null,
   initialPrayers = [],
-  familyId = 'family-current',
   initialDate,
 }: DevotionalPageProps) {
+  // Next.js never passes custom props into a page component — every other
+  // dashboard page reads the active family from localStorage instead of
+  // accepting it as a prop. This page previously defaulted to the literal
+  // string 'family-current', so every fetch it made targeted a
+  // nonexistent family and (missing `credentials: 'include'` on top of
+  // that) would have been unauthenticated even if it hadn't.
+  const [familyId, setFamilyId] = useState<string | null>(null);
+  useEffect(() => {
+    setFamilyId(localStorage.getItem('familyId'));
+  }, []);
   const getTodayString = () => {
     const today = new Date();
     const y = today.getFullYear();
@@ -44,8 +52,11 @@ export default function DevotionalPage({
 
   const fetchDevotional = useCallback(
     async (date: string) => {
+      if (!familyId) return;
       try {
-        const res = await fetch(`/api/v1/families/${encodeURIComponent(familyId)}/devotionals/by-date?date=${encodeURIComponent(date)}`);
+        const res = await fetch(`/api/v1/families/${encodeURIComponent(familyId)}/devotionals/by-date?date=${encodeURIComponent(date)}`, {
+          credentials: 'include',
+        });
         if (res.ok) {
           const data = await res.json();
           setDevotional(data);
@@ -64,8 +75,11 @@ export default function DevotionalPage({
   );
 
   const fetchPrayers = useCallback(async () => {
+    if (!familyId) return;
     try {
-      const res = await fetch(`/api/v1/families/${encodeURIComponent(familyId)}/prayers`);
+      const res = await fetch(`/api/v1/families/${encodeURIComponent(familyId)}/prayers`, {
+        credentials: 'include',
+      });
       if (res.ok) {
         const data = await res.json();
         setPrayers(data);
@@ -101,9 +115,11 @@ export default function DevotionalPage({
   };
 
   const handleSubmitDevotional = async (data: UpsertDailyDevotionalDto) => {
+    if (!familyId) throw new Error('Família não autenticada');
     const res = await fetch(`/api/v1/families/${encodeURIComponent(familyId)}/devotionals`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(data),
     });
 
@@ -120,9 +136,11 @@ export default function DevotionalPage({
   };
 
   const handleCreatePrayer = async (data: CreatePrayerDto) => {
+    if (!familyId) throw new Error('Família não autenticada');
     const res = await fetch(`/api/v1/families/${encodeURIComponent(familyId)}/prayers`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(data),
     });
 
@@ -136,9 +154,11 @@ export default function DevotionalPage({
   };
 
   const handleAnswerPrayer = async (id: string, answeredNote?: string) => {
+    if (!familyId) throw new Error('Família não autenticada');
     const res = await fetch(`/api/v1/families/${encodeURIComponent(familyId)}/prayers/${encodeURIComponent(id)}/answer`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ answeredNote }),
     });
 
@@ -152,8 +172,10 @@ export default function DevotionalPage({
   };
 
   const handleArchivePrayer = async (id: string) => {
+    if (!familyId) throw new Error('Família não autenticada');
     const res = await fetch(`/api/v1/families/${encodeURIComponent(familyId)}/prayers/${encodeURIComponent(id)}`, {
       method: 'DELETE',
+      credentials: 'include',
     });
 
     if (!res.ok) {
