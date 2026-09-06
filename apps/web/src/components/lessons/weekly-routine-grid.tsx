@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AletheiaIcon } from '@aletheia/ui';
+import { AletheiaIcon, Badge, Button, IconButton } from '@aletheia/ui';
 import type {
   DayOfWeek,
   LearnerSummaryDto,
@@ -84,24 +84,9 @@ export function WeeklyRoutineGrid({
           </p>
         </div>
         <Can action="manage_lessons">
-          <button
-            type="button"
-            data-testid="add-routine-slot-btn"
-            onClick={() => onAddSlot(1)}
-            className="btn btn-primary ui-button ui-button--primary ui-button--sm"
-            style={{
-              padding: '0.45rem 1rem',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--text-inverse)',
-              border: 'none',
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-          >
+          <Button size="sm" data-testid="add-routine-slot-btn" onClick={() => onAddSlot(1)}>
             + Adicionar Bloco de Rotina
-          </button>
+          </Button>
         </Can>
       </div>
 
@@ -146,19 +131,7 @@ export function WeeklyRoutineGrid({
                 <span style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)' }}>
                   {day.label}
                 </span>
-                <span
-                  style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    backgroundColor: daySlots.length > 0 ? 'var(--color-indigo-50)' : 'var(--sage-soft)',
-                    color: daySlots.length > 0 ? 'var(--color-indigo-700)' : 'var(--text-secondary)',
-                    padding: '0.125rem 0.5rem',
-                    borderRadius: 'var(--radius-full)',
-                    border: daySlots.length > 0 ? '1px solid var(--color-indigo-100)' : '1px solid var(--border-light)',
-                  }}
-                >
-                  {daySlots.length}
-                </span>
+                <Badge variant={daySlots.length > 0 ? 'indigo' : 'slate'}>{daySlots.length}</Badge>
               </div>
 
               {/* Day Slots List */}
@@ -214,45 +187,24 @@ export function WeeklyRoutineGrid({
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span
-                            data-testid={`slot-time-${slot.id}`}
-                            style={{
-                              fontSize: '0.75rem',
-                              fontWeight: 700,
-                              color: 'var(--color-indigo-700)',
-                              backgroundColor: 'var(--color-indigo-50)',
-                              padding: '0.125rem 0.375rem',
-                              borderRadius: 'var(--radius-sm)',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.25rem',
-                            }}
-                          >
+                          <Badge data-testid={`slot-time-${slot.id}`} variant="indigo">
                             <AletheiaIcon name="clock" size={11} />
                             <span>{slot.startTime} - {slot.endTime}</span>
-                          </span>
+                          </Badge>
                           <Can action="manage_lessons">
-                            <button
-                              type="button"
+                            <IconButton
+                              size="sm"
                               data-testid={`delete-slot-btn-${slot.id}`}
                               onClick={() => {
                                 if (window.confirm('Excluir este bloco de rotina? Esta ação não pode ser desfeita.')) {
                                   onDeleteSlot(slot.id);
                                 }
                               }}
+                              aria-label="Excluir bloco de rotina"
                               title="Excluir bloco de rotina"
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                color: 'var(--text-muted)',
-                                fontSize: '1rem',
-                                lineHeight: 1,
-                                cursor: 'pointer',
-                                padding: '0 0.25rem',
-                              }}
                             >
-                              &times;
-                            </button>
+                              <AletheiaIcon name="x" size={12} />
+                            </IconButton>
                           </Can>
                         </div>
 
@@ -268,66 +220,24 @@ export function WeeklyRoutineGrid({
 
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.125rem' }}>
                           {slot.subjectName || subInfo?.name ? (
-                            <span
-                              style={{
-                                fontSize: '0.6875rem',
-                                padding: '0.125rem 0.375rem',
-                                borderRadius: 'var(--radius-sm)',
-                                // Tint the pill with the subject's own color when it
-                                // has one, so each discipline reads as its own visual
-                                // identity — falls back to the neutral sage pill
-                                // otherwise (e.g. routine blocks with no subject).
-                                backgroundColor: subInfo?.color
-                                  ? `color-mix(in srgb, ${subInfo.color} 16%, white)`
-                                  : 'var(--sage-soft)',
-                                color: subInfo?.color || 'var(--text-secondary)',
-                                fontWeight: 500,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.25rem',
-                              }}
-                            >
+                            <Badge variant="slate">
                               <AletheiaIcon name="book-open" size={10} />
                               <span>{slot.subjectName || subInfo?.name}</span>
-                            </span>
+                            </Badge>
                           ) : null}
 
                           {learnerName && (
-                            <span
-                              style={{
-                                fontSize: '0.6875rem',
-                                padding: '0.125rem 0.375rem',
-                                borderRadius: 'var(--radius-sm)',
-                                backgroundColor: 'var(--color-indigo-50)',
-                                color: 'var(--color-indigo-700)',
-                                fontWeight: 500,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.25rem',
-                              }}
-                            >
+                            <Badge variant="indigo">
                               <AletheiaIcon name="graduation-cap" size={10} />
                               <span>{learnerName}</span>
-                            </span>
+                            </Badge>
                           )}
 
                           {slot.location && (
-                            <span
-                              style={{
-                                fontSize: '0.6875rem',
-                                padding: '0.125rem 0.375rem',
-                                borderRadius: 'var(--radius-sm)',
-                                backgroundColor: 'var(--sage-soft)',
-                                color: 'var(--text-secondary)',
-                                border: '1px solid var(--border-light)',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.25rem',
-                              }}
-                            >
+                            <Badge variant="slate">
                               <AletheiaIcon name="map-pin" size={10} />
                               <span>{slot.location}</span>
-                            </span>
+                            </Badge>
                           )}
                         </div>
                       </div>
@@ -336,25 +246,15 @@ export function WeeklyRoutineGrid({
                 )}
 
                 <Can action="manage_lessons">
-                  <button
-                    type="button"
+                  <Button
+                    variant="outline"
+                    size="sm"
                     data-testid={`add-slot-day-btn-${day.value}`}
                     onClick={() => onAddSlot(day.value)}
-                    style={{
-                      marginTop: 'auto',
-                      padding: '0.45rem',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1.5px dashed var(--border-medium)',
-                      backgroundColor: 'var(--sage-soft)',
-                      color: 'var(--text-secondary)',
-                      fontSize: '0.75rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      width: '100%',
-                    }}
+                    style={{ marginTop: 'auto', width: '100%' }}
                   >
                     + Adicionar Bloco
-                  </button>
+                  </Button>
                 </Can>
               </div>
             </div>

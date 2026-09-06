@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { Alert, Button, Checkbox, Input, Modal, Select, Textarea } from '@aletheia/ui';
 import type {
   CreateLessonPlanDto,
   LearnerSummaryDto,
@@ -138,447 +139,173 @@ export function LessonFormModal({
   );
 
   return (
-    <div
-      data-testid="lesson-form-modal-overlay"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 50,
-        padding: '1rem',
-        overflowY: 'auto',
-      }}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Planejar Nova Lição"
+      maxWidth="lg"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
+            Cancelar
+          </Button>
+          <Button type="submit" form="lesson-form" data-testid="save-lesson-btn" isLoading={loading}>
+            Salvar Lição
+          </Button>
+        </>
+      }
     >
-      <div
-        style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: '0.75rem',
-          padding: '1.75rem',
-          maxWidth: '42rem',
-          width: '100%',
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', margin: 0 }}>
-            Planejar Nova Lição
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '1.25rem',
-              cursor: 'pointer',
-              color: '#6B7280',
-            }}
-          >
-            &times;
-          </button>
+      {error && (
+        <Alert variant="error" data-testid="lesson-form-error" style={{ marginBottom: '1rem' }}>
+          {error}
+        </Alert>
+      )}
+
+      <form id="lesson-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {/* Title & Subject */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <Input
+            label="Título da Lição *"
+            data-testid="lesson-title-input"
+            required
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Ex: Leitura Narrativa e Vocabulário"
+          />
+
+          <Select
+            label="Disciplina *"
+            data-testid="lesson-subject-select"
+            required
+            value={subjectId}
+            onChange={(e) => setSubjectId(e.target.value)}
+            options={subjects.map((sub) => ({ value: sub.id, label: sub.name }))}
+          />
         </div>
 
-        {error && (
-          <div
-            data-testid="lesson-form-error"
-            style={{
-              backgroundColor: '#FEF2F2',
-              border: '1px solid #F87171',
-              color: '#B91C1C',
-              padding: '0.75rem',
-              borderRadius: '0.375rem',
-              fontSize: '0.875rem',
-              marginBottom: '1rem',
-            }}
-          >
-            {error}
+        {/* Date, Start Time, End Time, Duration */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '1rem' }}>
+          <Input
+            label="Data *"
+            type="date"
+            data-testid="lesson-date-input"
+            required
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+
+          <Input
+            label="Início"
+            type="time"
+            data-testid="lesson-start-time-input"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+          />
+
+          <Input
+            label="Término"
+            type="time"
+            data-testid="lesson-end-time-input"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+          />
+
+          <Input
+            label="Duração (min)"
+            type="number"
+            data-testid="lesson-duration-input"
+            min={1}
+            max={1440}
+            value={durationMinutes}
+            onChange={(e) => setDurationMinutes(Number(e.target.value))}
+          />
+        </div>
+
+        {/* Multi-Learner Selection */}
+        <div>
+          <span style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+            Educandos Participantes *
+          </span>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            {learners.map((learner) => (
+              <Checkbox
+                key={learner.id}
+                data-testid={`learner-checkbox-${learner.id}`}
+                label={learner.preferredName || learner.firstName}
+                checked={selectedLearnerIds.includes(learner.id)}
+                onChange={() => toggleLearner(learner.id)}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Objectives Linkage */}
+        {availableObjectives.length > 0 && (
+          <div>
+            <span style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+              Vincular Objetivos de Aprendizagem
+            </span>
+            <div
+              style={{
+                maxHeight: '120px',
+                overflowY: 'auto',
+                border: '1px solid var(--border-light)',
+                borderRadius: 'var(--radius-md)',
+                padding: '0.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.375rem',
+              }}
+            >
+              {availableObjectives.map((obj) => (
+                <Checkbox
+                  key={obj.id}
+                  data-testid={`objective-checkbox-${obj.id}`}
+                  label={obj.title}
+                  checked={selectedObjectiveIds.includes(obj.id)}
+                  onChange={() => toggleObjective(obj.id)}
+                />
+              ))}
+            </div>
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          {/* Title & Subject */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-            <div>
-              <label
-                htmlFor="lesson-title"
-                style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.25rem' }}
-              >
-                Título da Lição *
-              </label>
-              <input
-                id="lesson-title"
-                data-testid="lesson-title-input"
-                type="text"
-                required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ex: Leitura Narrativa e Vocabulário"
-                style={{
-                  width: '100%',
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #D1D5DB',
-                  fontSize: '0.875rem',
-                }}
-              />
-            </div>
+        <Textarea
+          label="Descrição & Plano da Aula"
+          rows={2}
+          data-testid="lesson-desc-input"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="O que será ensinado e praticado hoje..."
+        />
 
-            <div>
-              <label
-                htmlFor="lesson-subject"
-                style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.25rem' }}
-              >
-                Disciplina *
-              </label>
-              <select
-                id="lesson-subject"
-                data-testid="lesson-subject-select"
-                required
-                value={subjectId}
-                onChange={(e) => setSubjectId(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #D1D5DB',
-                  fontSize: '0.875rem',
-                  backgroundColor: '#FFFFFF',
-                }}
-              >
-                {subjects.map((sub) => (
-                  <option key={sub.id} value={sub.id}>
-                    {sub.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+        {/* Materials & Homework */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <Input
+            label="Materiais / Livros"
+            data-testid="lesson-materials-input"
+            value={materials}
+            onChange={(e) => setMaterials(e.target.value)}
+            placeholder="Ex: Livro Cap. 4, Caderno, Lápis"
+          />
+          <Input
+            label="Tarefa / Prática"
+            data-testid="lesson-homework-input"
+            value={homework}
+            onChange={(e) => setHomework(e.target.value)}
+            placeholder="Ex: Exercícios 1 ao 5 na pág 42"
+          />
+        </div>
 
-          {/* Date, Start Time, End Time, Duration */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
-            <div>
-              <label
-                htmlFor="lesson-date"
-                style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.25rem' }}
-              >
-                Data *
-              </label>
-              <input
-                id="lesson-date"
-                data-testid="lesson-date-input"
-                type="date"
-                required
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #D1D5DB',
-                  fontSize: '0.875rem',
-                }}
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="lesson-start-time"
-                style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.25rem' }}
-              >
-                Início
-              </label>
-              <input
-                id="lesson-start-time"
-                data-testid="lesson-start-time-input"
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #D1D5DB',
-                  fontSize: '0.875rem',
-                }}
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="lesson-end-time"
-                style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.25rem' }}
-              >
-                Término
-              </label>
-              <input
-                id="lesson-end-time"
-                data-testid="lesson-end-time-input"
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #D1D5DB',
-                  fontSize: '0.875rem',
-                }}
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="lesson-duration"
-                style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.25rem' }}
-              >
-                Duração (min)
-              </label>
-              <input
-                id="lesson-duration"
-                data-testid="lesson-duration-input"
-                type="number"
-                min={1}
-                max={1440}
-                value={durationMinutes}
-                onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #D1D5DB',
-                  fontSize: '0.875rem',
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Multi-Learner Selection */}
-          <div style={{ marginBottom: '1rem' }}>
-            <span style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.375rem' }}>
-              Educandos Participantes *
-            </span>
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-              {learners.map((learner) => {
-                const checked = selectedLearnerIds.includes(learner.id);
-                return (
-                  <label
-                    key={learner.id}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.375rem',
-                      padding: '0.375rem 0.75rem',
-                      borderRadius: '0.375rem',
-                      border: checked ? '1px solid #2563EB' : '1px solid #D1D5DB',
-                      backgroundColor: checked ? '#EFF6FF' : '#FFFFFF',
-                      fontSize: '0.875rem',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      data-testid={`learner-checkbox-${learner.id}`}
-                      checked={checked}
-                      onChange={() => toggleLearner(learner.id)}
-                      style={{ accentColor: '#2563EB' }}
-                    />
-                    <span>{learner.preferredName || learner.firstName}</span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Objectives Linkage */}
-          {availableObjectives.length > 0 && (
-            <div style={{ marginBottom: '1rem' }}>
-              <span style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.375rem' }}>
-                Vincular Objetivos de Aprendizagem
-              </span>
-              <div
-                style={{
-                  maxHeight: '120px',
-                  overflowY: 'auto',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '0.375rem',
-                  padding: '0.5rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.375rem',
-                }}
-              >
-                {availableObjectives.map((obj) => {
-                  const checked = selectedObjectiveIds.includes(obj.id);
-                  return (
-                    <label
-                      key={obj.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        fontSize: '0.8125rem',
-                        cursor: 'pointer',
-                        color: '#374151',
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        data-testid={`objective-checkbox-${obj.id}`}
-                        checked={checked}
-                        onChange={() => toggleObjective(obj.id)}
-                        style={{ accentColor: '#2563EB' }}
-                      />
-                      <span>{obj.title}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Description / Content */}
-          <div style={{ marginBottom: '0.75rem' }}>
-            <label
-              htmlFor="lesson-description"
-              style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.25rem' }}
-            >
-              Descrição & Plano da Aula
-            </label>
-            <textarea
-              id="lesson-description"
-              data-testid="lesson-desc-input"
-              rows={2}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="O que será ensinado e praticado hoje..."
-              style={{
-                width: '100%',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '0.375rem',
-                border: '1px solid #D1D5DB',
-                fontSize: '0.875rem',
-              }}
-            />
-          </div>
-
-          {/* Materials & Homework */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.75rem' }}>
-            <div>
-              <label
-                htmlFor="lesson-materials"
-                style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.25rem' }}
-              >
-                Materiais / Livros
-              </label>
-              <input
-                id="lesson-materials"
-                data-testid="lesson-materials-input"
-                type="text"
-                value={materials}
-                onChange={(e) => setMaterials(e.target.value)}
-                placeholder="Ex: Livro Cap. 4, Caderno, Lápis"
-                style={{
-                  width: '100%',
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #D1D5DB',
-                  fontSize: '0.875rem',
-                }}
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="lesson-homework"
-                style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.25rem' }}
-              >
-                Tarefa / Prática
-              </label>
-              <input
-                id="lesson-homework"
-                data-testid="lesson-homework-input"
-                type="text"
-                value={homework}
-                onChange={(e) => setHomework(e.target.value)}
-                placeholder="Ex: Exercícios 1 ao 5 na pág 42"
-                style={{
-                  width: '100%',
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #D1D5DB',
-                  fontSize: '0.875rem',
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div style={{ marginBottom: '1.25rem' }}>
-            <label
-              htmlFor="lesson-notes"
-              style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.25rem' }}
-            >
-              Observações Pedagógicas (Opcional)
-            </label>
-            <textarea
-              id="lesson-notes"
-              data-testid="lesson-notes-input"
-              rows={2}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Adaptações, dicas para o educador..."
-              style={{
-                width: '100%',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '0.375rem',
-                border: '1px solid #D1D5DB',
-                fontSize: '0.875rem',
-              }}
-            />
-          </div>
-
-          {/* Actions */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '0.375rem',
-                border: '1px solid #D1D5DB',
-                backgroundColor: '#FFFFFF',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                color: '#374151',
-                cursor: 'pointer',
-              }}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              data-testid="save-lesson-btn"
-              disabled={loading}
-              style={{
-                padding: '0.5rem 1.25rem',
-                borderRadius: '0.375rem',
-                border: 'none',
-                backgroundColor: '#2563EB',
-                color: '#FFFFFF',
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                cursor: loading ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {loading ? 'Salvando...' : 'Salvar Lição'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <Textarea
+          label="Observações Pedagógicas (Opcional)"
+          rows={2}
+          data-testid="lesson-notes-input"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Adaptações, dicas para o educador..."
+        />
+      </form>
+    </Modal>
   );
 }

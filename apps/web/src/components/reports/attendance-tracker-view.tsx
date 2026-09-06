@@ -293,13 +293,14 @@ export function AttendanceTrackerView({
             backgroundColor: 'var(--bg-surface)',
             borderRadius: 'var(--radius-lg)',
             border: '1px solid var(--border-light)',
-            overflow: 'hidden',
+            overflowX: 'auto',
+            overflowY: 'hidden',
             boxShadow: 'var(--shadow-sm)',
           }}
         >
           <table
             data-testid="attendance-records-table"
-            style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}
+            style={{ width: '100%', minWidth: '640px', borderCollapse: 'collapse', textAlign: 'left' }}
           >
             <thead>
               <tr style={{ backgroundColor: 'var(--sage-soft)', borderBottom: '1px solid var(--border-light)' }}>

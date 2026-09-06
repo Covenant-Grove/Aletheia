@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AletheiaIcon } from '@aletheia/ui';
+import { AletheiaIcon, Badge, Button, Checkbox, Input } from '@aletheia/ui';
 import type { DailyAgendaDto, DailyAgendaItemDto, LearnerSummaryDto } from '@aletheia/contracts';
 import { Can } from '../auth/role-guard';
 
@@ -65,6 +65,13 @@ export function DailyAgendaView({
     learnerMap.set(l.id, l.preferredName || l.firstName);
   });
 
+  const statusBadgeVariant = (status: DailyAgendaItemDto['status']): 'emerald' | 'amber' | 'rose' | 'slate' => {
+    if (status === 'COMPLETED') return 'emerald';
+    if (status === 'IN_PROGRESS') return 'amber';
+    if (status === 'POSTPONED') return 'rose';
+    return 'slate';
+  };
+
   return (
     <div
       data-testid="daily-agenda-view"
@@ -86,113 +93,33 @@ export function DailyAgendaView({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <button
-            type="button"
-            className="btn btn-secondary ui-button ui-button--secondary ui-button--sm"
-            onClick={() => handleShiftDate(-1)}
-            style={{
-              padding: '0.375rem 0.75rem',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border-medium)',
-              backgroundColor: 'var(--bg-surface)',
-              color: 'var(--text-secondary)',
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
+          <Button variant="secondary" size="sm" onClick={() => handleShiftDate(-1)}>
             &larr; Ontem
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary ui-button ui-button--secondary ui-button--sm"
-            onClick={handleToday}
-            style={{
-              padding: '0.375rem 0.75rem',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border-medium)',
-              backgroundColor: 'var(--sage-soft)',
-              color: 'var(--text-primary)',
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
+          </Button>
+          <Button variant="secondary" size="sm" onClick={handleToday}>
             Hoje
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary ui-button ui-button--secondary ui-button--sm"
-            onClick={() => handleShiftDate(1)}
-            style={{
-              padding: '0.375rem 0.75rem',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border-medium)',
-              backgroundColor: 'var(--bg-surface)',
-              color: 'var(--text-secondary)',
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => handleShiftDate(1)}>
             Amanhã &rarr;
-          </button>
+          </Button>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <input
+          <Input
             type="date"
             data-testid="agenda-date-picker"
             value={selectedDate}
             onChange={(e) => onDateChange(e.target.value)}
-            style={{
-              padding: '0.4rem 0.75rem',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border-medium)',
-              fontSize: '0.875rem',
-              color: 'var(--text-primary)',
-              backgroundColor: 'var(--bg-surface)',
-            }}
           />
           <Can action="manage_lessons">
-            <button
-              type="button"
-              data-testid="create-lesson-btn"
-              onClick={onOpenCreateLesson}
-              className="btn btn-primary ui-button ui-button--primary ui-button--sm"
-              style={{
-                padding: '0.45rem 1rem',
-                borderRadius: 'var(--radius-md)',
-                border: 'none',
-                color: 'var(--text-inverse)',
-                fontSize: '0.8125rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                boxShadow: 'var(--shadow-sm)',
-              }}
-            >
+            <Button size="sm" data-testid="create-lesson-btn" onClick={onOpenCreateLesson}>
               + Nova Lição
-            </button>
+            </Button>
           </Can>
           <Can action="manage_lessons">
-            <button
-              type="button"
-              data-testid="create-slot-btn"
-              onClick={onOpenCreateSlot}
-              className="btn btn-secondary ui-button ui-button--secondary ui-button--sm"
-              style={{
-                padding: '0.45rem 0.875rem',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-medium)',
-                backgroundColor: 'var(--bg-surface)',
-                color: 'var(--text-secondary)',
-                fontSize: '0.8125rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
+            <Button variant="secondary" size="sm" data-testid="create-slot-btn" onClick={onOpenCreateSlot}>
               + Bloco de Rotina
-            </button>
+            </Button>
           </Can>
         </div>
       </div>
@@ -282,42 +209,12 @@ export function DailyAgendaView({
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
             <Can action="manage_lessons">
-              <button
-                type="button"
-                onClick={onOpenCreateLesson}
-                className="btn btn-primary ui-button ui-button--primary"
-                style={{
-                  padding: '0.5rem 1.25rem',
-                  borderRadius: 'var(--radius-md)',
-                    color: 'var(--text-inverse)',
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  border: 'none',
-                  cursor: 'pointer',
-                  boxShadow: 'var(--shadow-sm)',
-                }}
-              >
-                Planejar Lição
-              </button>
+              <Button onClick={onOpenCreateLesson}>Planejar Lição</Button>
             </Can>
             <Can action="manage_lessons">
-              <button
-                type="button"
-                onClick={onOpenCreateSlot}
-                className="btn btn-secondary ui-button ui-button--secondary"
-                style={{
-                  padding: '0.5rem 1.25rem',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--bg-surface)',
-                  color: 'var(--text-secondary)',
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  border: '1px solid var(--border-medium)',
-                  cursor: 'pointer',
-                }}
-              >
+              <Button variant="secondary" onClick={onOpenCreateSlot}>
                 Criar Bloco de Rotina
-              </button>
+              </Button>
             </Can>
           </div>
         </div>
@@ -326,7 +223,7 @@ export function DailyAgendaView({
           {agenda.items.map((item) => {
             const isCompleted = item.isCompleted || item.status === 'COMPLETED';
             const isRoutine = item.type === 'ROUTINE_SLOT';
-            const itemColor = item.subjectColor || (isRoutine ? 'var(--color-indigo-700)' : 'var(--color-indigo-700)');
+            const itemColor = item.subjectColor || 'var(--color-indigo-700)';
 
             return (
               <div
@@ -350,9 +247,7 @@ export function DailyAgendaView({
               >
                 {/* Left check and details */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: '240px' }}>
-                  {/* Checkbox Toggle */}
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     data-testid={`complete-toggle-btn-${item.id}`}
                     checked={isCompleted}
                     onChange={() => {
@@ -362,115 +257,36 @@ export function DailyAgendaView({
                         onOpenCompleteLesson(item);
                       }
                     }}
-                    style={{
-                      width: '1.25rem',
-                      height: '1.25rem',
-                      borderRadius: 'var(--radius-sm)',
-                      cursor: 'pointer',
-                      accentColor: 'var(--color-emerald-600)',
-                      flexShrink: 0,
-                    }}
                   />
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                       {/* Type Badge */}
-                      <span
-                        data-testid={`item-type-badge-${item.id}`}
-                        style={{
-                          fontSize: '0.6875rem',
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                          padding: '0.125rem 0.5rem',
-                          borderRadius: 'var(--radius-full)',
-                          backgroundColor: isRoutine ? 'var(--color-indigo-50)' : 'var(--color-indigo-50)',
-                          color: isRoutine ? 'var(--color-indigo-700)' : 'var(--color-indigo-700)',
-                          border: isRoutine ? '1px solid var(--color-indigo-100)' : '1px solid var(--color-indigo-100)',
-                        }}
-                      >
+                      <Badge data-testid={`item-type-badge-${item.id}`} variant="indigo">
                         {isRoutine ? 'Rotina' : 'Lição'}
-                      </span>
+                      </Badge>
 
                       {/* Subject Badge */}
                       {item.subjectName && (
-                        <span
-                          style={{
-                            fontSize: '0.6875rem',
-                            fontWeight: 600,
-                            padding: '0.125rem 0.5rem',
-                            borderRadius: 'var(--radius-full)',
-                            backgroundColor: 'var(--sage-soft)',
-                            color: 'var(--text-secondary)',
-                            border: '1px solid var(--border-light)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                          }}
-                        >
+                        <Badge variant="slate">
                           <AletheiaIcon name="book-open" size={10} />
                           <span>{item.subjectName}</span>
-                        </span>
+                        </Badge>
                       )}
 
                       {/* Time Duration Pill */}
                       {(item.startTime || item.endTime) && (
-                        <span
-                          data-testid={`item-time-${item.id}`}
-                          style={{
-                            fontSize: '0.75rem',
-                            color: 'var(--text-secondary)',
-                            fontWeight: 600,
-                            backgroundColor: 'var(--sage-soft)',
-                            padding: '0.125rem 0.5rem',
-                            borderRadius: 'var(--radius-full)',
-                            border: '1px solid var(--border-light)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                          }}
-                        >
+                        <Badge data-testid={`item-time-${item.id}`} variant="slate">
                           <AletheiaIcon name="clock" size={10} />
                           <span>{item.startTime || ''}{item.endTime ? ` - ${item.endTime}` : ''}</span>
-                        </span>
+                        </Badge>
                       )}
 
                       {/* Status Badge */}
                       {item.status && (
-                        <span
-                          data-testid={`item-status-${item.id}`}
-                          style={{
-                            fontSize: '0.6875rem',
-                            fontWeight: 700,
-                            padding: '0.125rem 0.5rem',
-                            borderRadius: 'var(--radius-full)',
-                            backgroundColor:
-                              item.status === 'COMPLETED'
-                                ? 'var(--color-emerald-50)'
-                                : item.status === 'IN_PROGRESS'
-                                ? 'var(--color-amber-50)'
-                                : item.status === 'POSTPONED'
-                                ? 'var(--color-rose-50)'
-                                : 'var(--sage-soft)',
-                            color:
-                              item.status === 'COMPLETED'
-                                ? 'var(--color-emerald-700)'
-                                : item.status === 'IN_PROGRESS'
-                                ? 'var(--color-amber-700)'
-                                : item.status === 'POSTPONED'
-                                ? 'var(--color-rose-700)'
-                                : 'var(--text-secondary)',
-                            border:
-                              item.status === 'COMPLETED'
-                                ? '1px solid var(--color-emerald-100)'
-                                : item.status === 'IN_PROGRESS'
-                                ? '1px solid var(--color-amber-100)'
-                                : item.status === 'POSTPONED'
-                                ? '1px solid var(--color-rose-100)'
-                                : '1px solid var(--border-light)',
-                          }}
-                        >
+                        <Badge data-testid={`item-status-${item.id}`} variant={statusBadgeVariant(item.status)}>
                           {item.status}
-                        </span>
+                        </Badge>
                       )}
                     </div>
 
@@ -490,25 +306,10 @@ export function DailyAgendaView({
                     {item.learnerIds && item.learnerIds.length > 0 && (
                       <div style={{ display: 'flex', gap: '0.375rem', marginTop: '0.125rem', flexWrap: 'wrap' }}>
                         {item.learnerIds.map((lId) => (
-                          <span
-                            key={lId}
-                            data-testid={`learner-badge-${lId}`}
-                            style={{
-                              fontSize: '0.6875rem',
-                              padding: '0.125rem 0.5rem',
-                              borderRadius: 'var(--radius-full)',
-                              backgroundColor: 'var(--sage-soft)',
-                              color: 'var(--text-secondary)',
-                              fontWeight: 500,
-                              border: '1px solid var(--border-light)',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.25rem',
-                            }}
-                          >
+                          <Badge key={lId} data-testid={`learner-badge-${lId}`} variant="slate">
                             <AletheiaIcon name="graduation-cap" size={10} />
                             <span>{learnerMap.get(lId) || 'Educando'}</span>
-                          </span>
+                          </Badge>
                         ))}
                       </div>
                     )}
@@ -520,63 +321,35 @@ export function DailyAgendaView({
                   {!isRoutine && (
                     <>
                       <Can action="manage_lessons">
-                        <button
-                          type="button"
+                        <Button
+                          size="sm"
+                          variant={isCompleted ? 'secondary' : 'primary'}
                           data-testid={`complete-lesson-btn-${item.id}`}
                           onClick={() => onOpenCompleteLesson(item)}
                           title="Concluir lição com notas e avaliação"
-                          className="btn btn-sm"
-                          style={{
-                            padding: '0.35rem 0.75rem',
-                            borderRadius: 'var(--radius-sm)',
-                            border: isCompleted ? '1px solid var(--color-emerald-100)' : '1px solid var(--color-emerald-600)',
-                            backgroundColor: isCompleted ? 'var(--color-emerald-50)' : 'var(--color-emerald-600)',
-                            color: isCompleted ? 'var(--color-emerald-700)' : 'var(--text-inverse)',
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                          }}
+                          leftIcon={isCompleted ? <AletheiaIcon name="check" size={12} /> : undefined}
                         >
-                          {isCompleted ? (
-                            <>
-                              <AletheiaIcon name="check" size={12} />
-                              <span>Concluída</span>
-                            </>
-                          ) : (
-                            'Concluir'
-                          )}
-                        </button>
+                          {isCompleted ? 'Concluída' : 'Concluir'}
+                        </Button>
                       </Can>
 
                       <Can action="manage_lessons">
-                        <button
-                          type="button"
+                        <Button
+                          size="sm"
+                          variant="secondary"
                           data-testid={`reschedule-btn-${item.id}`}
                           onClick={() => onOpenRescheduleLesson(item)}
                           title="Reagendar lição"
-                          className="btn btn-secondary btn-sm"
-                          style={{
-                            padding: '0.35rem 0.65rem',
-                            borderRadius: 'var(--radius-sm)',
-                            border: '1px solid var(--border-medium)',
-                            backgroundColor: 'var(--bg-surface)',
-                            color: 'var(--text-secondary)',
-                            fontSize: '0.75rem',
-                            fontWeight: 500,
-                            cursor: 'pointer',
-                          }}
                         >
                           Reagendar
-                        </button>
+                        </Button>
                       </Can>
 
                       {onDeleteLesson && (
                         <Can action="manage_lessons">
-                          <button
-                            type="button"
+                          <Button
+                            size="sm"
+                            variant="danger"
                             data-testid={`delete-lesson-btn-${item.id}`}
                             onClick={() => {
                               if (window.confirm('Excluir esta lição? Esta ação não pode ser desfeita.')) {
@@ -584,19 +357,9 @@ export function DailyAgendaView({
                               }
                             }}
                             title="Excluir lição"
-                            className="btn btn-sm"
-                            style={{
-                              padding: '0.35rem 0.5rem',
-                              borderRadius: 'var(--radius-sm)',
-                              border: '1px solid var(--color-rose-100)',
-                              backgroundColor: 'var(--color-rose-50)',
-                              color: 'var(--color-rose-600)',
-                              fontSize: '0.75rem',
-                              cursor: 'pointer',
-                            }}
                           >
                             Excluir
-                          </button>
+                          </Button>
                         </Can>
                       )}
                     </>
@@ -604,8 +367,9 @@ export function DailyAgendaView({
 
                   {isRoutine && onDeleteSlot && (
                     <Can action="manage_lessons">
-                      <button
-                        type="button"
+                      <Button
+                        size="sm"
+                        variant="danger"
                         data-testid={`delete-slot-btn-${item.id}`}
                         onClick={() => {
                           if (window.confirm('Excluir este bloco de rotina? Esta ação não pode ser desfeita.')) {
@@ -613,19 +377,9 @@ export function DailyAgendaView({
                           }
                         }}
                         title="Excluir bloco de rotina"
-                        className="btn btn-sm"
-                        style={{
-                          padding: '0.35rem 0.5rem',
-                          borderRadius: 'var(--radius-sm)',
-                          border: '1px solid var(--color-rose-100)',
-                          backgroundColor: 'var(--color-rose-50)',
-                          color: 'var(--color-rose-600)',
-                          fontSize: '0.75rem',
-                          cursor: 'pointer',
-                        }}
                       >
                         Excluir
-                      </button>
+                      </Button>
                     </Can>
                   )}
                 </div>
