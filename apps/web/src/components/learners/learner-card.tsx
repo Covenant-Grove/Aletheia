@@ -210,7 +210,16 @@ export function LearnerCard({ learner, onEdit, onToggleArchive }: LearnerCardPro
             variant={isArchived ? 'primary' : 'danger'}
             size="sm"
             data-testid={`archive-learner-btn-${learner.id}`}
-            onClick={() => onToggleArchive?.(learner)}
+            onClick={() => {
+              if (
+                isArchived ||
+                window.confirm(
+                  `Arquivar "${learner.preferredName || learner.firstName}"? O educando deixará de aparecer nas listas ativas.`,
+                )
+              ) {
+                onToggleArchive?.(learner);
+              }
+            }}
           >
             {isArchived ? 'Reativar' : 'Arquivar'}
           </Button>
