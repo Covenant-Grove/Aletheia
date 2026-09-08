@@ -14,6 +14,7 @@ import type {
   RescheduleLessonDto,
   ScheduleSlotResponseDto,
   SubjectResponseDto,
+  UpdateScheduleSlotDto,
 } from '@aletheia/contracts';
 import { ProductShell } from '../../../src/components/product-shell';
 import { DailyAgendaView } from '../../../src/components/lessons/daily-agenda-view';
@@ -48,6 +49,7 @@ export default function SchedulePage() {
   const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
   const [isSlotModalOpen, setIsSlotModalOpen] = useState(false);
   const [slotDayOfWeek, setSlotDayOfWeek] = useState<DayOfWeek>(1);
+  const [slotToEdit, setSlotToEdit] = useState<ScheduleSlotResponseDto | null>(null);
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
   const [rescheduleItem, setRescheduleItem] = useState<RescheduleLessonItem | null>(null);
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
@@ -235,6 +237,27 @@ export default function SchedulePage() {
     await fetchAgenda();
   };
 
+  const handleUpdateSlot = async (slotId: string, dto: UpdateScheduleSlotDto) => {
+    if (!familyId) return;
+    const res = await fetch(`/api/v1/families/${familyId}/schedule/slots/${slotId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(dto),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Falha ao atualizar bloco de rotina');
+    }
+    await fetchSlots();
+    await fetchAgenda();
+  };
+
+  const handleOpenEditSlot = (slot: ScheduleSlotResponseDto) => {
+    setSlotToEdit(slot);
+    setIsSlotModalOpen(true);
+  };
+
   const handleDeleteSlot = async (slotId: string) => {
     if (!familyId) return;
     try {
@@ -276,6 +299,7 @@ export default function SchedulePage() {
   };
 
   const handleOpenAddSlot = (day?: DayOfWeek) => {
+    setSlotToEdit(null);
     setSlotDayOfWeek(day || 1);
     setIsSlotModalOpen(true);
   };
@@ -389,6 +413,7 @@ export default function SchedulePage() {
             subjects={subjects}
             onAddSlot={handleOpenAddSlot}
             onDeleteSlot={handleDeleteSlot}
+            onEditSlot={handleOpenEditSlot}
           />
         )}
 
@@ -405,11 +430,16 @@ export default function SchedulePage() {
 
         <RoutineSlotModal
           isOpen={isSlotModalOpen}
-          onClose={() => setIsSlotModalOpen(false)}
+          onClose={() => {
+            setIsSlotModalOpen(false);
+            setSlotToEdit(null);
+          }}
           onSave={handleCreateSlot}
+          onUpdate={handleUpdateSlot}
           learners={learners}
           subjects={subjects}
           initialDayOfWeek={slotDayOfWeek}
+          slotToEdit={slotToEdit}
         />
 
         <RescheduleModal

@@ -26,7 +26,7 @@ export function WeeklyRoutineGrid({
   subjects,
   onAddSlot,
   onDeleteSlot,
-  onEditSlot: _onEditSlot,
+  onEditSlot,
 }: WeeklyRoutineGridProps) {
   const learnerMap = new Map<string, string>();
   learners.forEach((l) => {
@@ -192,19 +192,30 @@ export function WeeklyRoutineGrid({
                             <span>{slot.startTime} - {slot.endTime}</span>
                           </Badge>
                           <Can action="manage_lessons">
-                            <IconButton
-                              size="sm"
-                              data-testid={`delete-slot-btn-${slot.id}`}
-                              onClick={() => {
-                                if (window.confirm('Excluir este bloco de rotina? Esta ação não pode ser desfeita.')) {
-                                  onDeleteSlot(slot.id);
-                                }
-                              }}
-                              aria-label="Excluir bloco de rotina"
-                              title="Excluir bloco de rotina"
-                            >
-                              <AletheiaIcon name="x" size={12} />
-                            </IconButton>
+                            <div style={{ display: 'flex', gap: '0.25rem' }}>
+                              <IconButton
+                                size="sm"
+                                data-testid={`edit-slot-btn-${slot.id}`}
+                                onClick={() => onEditSlot?.(slot)}
+                                aria-label="Editar bloco de rotina"
+                                title="Editar bloco de rotina"
+                              >
+                                <AletheiaIcon name="pencil" size={12} />
+                              </IconButton>
+                              <IconButton
+                                size="sm"
+                                data-testid={`delete-slot-btn-${slot.id}`}
+                                onClick={() => {
+                                  if (window.confirm('Excluir este bloco de rotina? Esta ação não pode ser desfeita.')) {
+                                    onDeleteSlot(slot.id);
+                                  }
+                                }}
+                                aria-label="Excluir bloco de rotina"
+                                title="Excluir bloco de rotina"
+                              >
+                                <AletheiaIcon name="x" size={12} />
+                              </IconButton>
+                            </div>
                           </Can>
                         </div>
 

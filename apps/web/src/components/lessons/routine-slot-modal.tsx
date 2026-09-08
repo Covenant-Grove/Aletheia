@@ -1,22 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Button, Input, Modal, Select } from '@aletheia/ui';
 import type {
   CreateScheduleSlotDto,
   DayOfWeek,
   LearnerSummaryDto,
+  ScheduleSlotResponseDto,
   SubjectResponseDto,
+  UpdateScheduleSlotDto,
 } from '@aletheia/contracts';
 
 export interface RoutineSlotModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (dto: CreateScheduleSlotDto) => Promise<void>;
+  onUpdate?: ((slotId: string, dto: UpdateScheduleSlotDto) => Promise<void>) | undefined;
   learners: LearnerSummaryDto[];
   subjects: SubjectResponseDto[];
   initialDayOfWeek?: DayOfWeek;
   academicYearId?: string;
+  slotToEdit?: ScheduleSlotResponseDto | null | undefined;
 }
 
 export const DAYS_OF_WEEK: Array<{ value: DayOfWeek; label: string }> = [
@@ -33,10 +37,12 @@ export function RoutineSlotModal({
   isOpen,
   onClose,
   onSave,
+  onUpdate,
   learners,
   subjects,
   initialDayOfWeek = 1,
   academicYearId,
+  slotToEdit,
 }: RoutineSlotModalProps) {
   const [title, setTitle] = useState('');
   const [dayOfWeek, setDayOfWeek] = useState<DayOfWeek>(initialDayOfWeek);
@@ -49,6 +55,31 @@ export function RoutineSlotModal({
   const [color, setColor] = useState('#3B82F6');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (slotToEdit) {
+      setTitle(slotToEdit.title);
+      setDayOfWeek(slotToEdit.dayOfWeek);
+      setStartTime(slotToEdit.startTime);
+      setEndTime(slotToEdit.endTime);
+      setSubjectId(slotToEdit.subjectId || '');
+      setLearnerId(slotToEdit.learnerId || '');
+      setLocation(slotToEdit.location || '');
+      setDescription(slotToEdit.description || '');
+      setColor(slotToEdit.color || '#3B82F6');
+    } else {
+      setTitle('');
+      setDayOfWeek(initialDayOfWeek);
+      setStartTime('08:00');
+      setEndTime('09:00');
+      setSubjectId('');
+      setLearnerId('');
+      setLocation('');
+      setDescription('');
+      setColor('#3B82F6');
+    }
+    setError(null);
+  }, [slotToEdit, initialDayOfWeek, isOpen]);
 
   if (!isOpen) return null;
 
@@ -66,7 +97,7 @@ export function RoutineSlotModal({
     setError(null);
     setLoading(true);
     try {
-      await onSave({
+      const dto = {
         title: title.trim(),
         dayOfWeek: Number(dayOfWeek) as DayOfWeek,
         startTime,
@@ -77,7 +108,12 @@ export function RoutineSlotModal({
         description: description.trim() || undefined,
         color: color || undefined,
         academicYearId: academicYearId || undefined,
-      });
+      };
+      if (slotToEdit && onUpdate) {
+        await onUpdate(slotToEdit.id, dto);
+      } else {
+        await onSave(dto);
+      }
       setTitle('');
       setDescription('');
       setLocation('');
@@ -85,7 +121,11 @@ export function RoutineSlotModal({
       setLearnerId('');
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro ao criar bloco de rotina');
+      setError(
+        err instanceof Error
+          ? err.message
+          : `Erro ao ${slotToEdit ? 'atualizar' : 'criar'} bloco de rotina`,
+      );
     } finally {
       setLoading(false);
     }
@@ -95,7 +135,7 @@ export function RoutineSlotModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Novo Bloco de Rotina Semanal"
+      title={slotToEdit ? 'Editar Bloco de Rotina Semanal' : 'Novo Bloco de Rotina Semanal'}
       maxWidth="lg"
       footer={
         <>
@@ -103,7 +143,7 @@ export function RoutineSlotModal({
             Cancelar
           </Button>
           <Button type="submit" form="routine-slot-form" data-testid="save-slot-btn" isLoading={loading}>
-            Salvar Bloco
+            {slotToEdit ? 'Salvar Alterações' : 'Salvar Bloco'}
           </Button>
         </>
       }
