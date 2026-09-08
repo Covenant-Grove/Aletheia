@@ -182,6 +182,12 @@ test.describe('Shell visual regression', () => {
   });
 
   test('devotional shell', async ({ page }) => {
+    // The devotional page defaults its date picker to the real "today"
+    // (new Date()), not the mocked API responses' fixed 2026-01-05 — left
+    // unfrozen, the visible date text drifts a few pixels every day this
+    // suite runs on a different calendar date than when the baseline was
+    // captured, flaking CI independent of any real regression.
+    await page.clock.setFixedTime(new Date('2026-01-05T12:00:00.000Z'));
     await mockAuthenticatedFamily(page);
 
     await page.route(`**/api/v1/families/${familyId}/devotionals/by-date**`, async (route) => {
@@ -294,6 +300,10 @@ test.describe('Shell visual regression', () => {
   });
 
   test('schedule shell', async ({ page }) => {
+    // Same real-"today" drift as the devotional shell test above — the
+    // schedule page's date picker defaults to new Date(), not the mocked
+    // agenda's fixed 2026-01-05.
+    await page.clock.setFixedTime(new Date('2026-01-05T12:00:00.000Z'));
     await mockAuthenticatedFamily(page);
 
     await page.route(`**/api/v1/families/${familyId}/curriculum/subjects`, async (route) => {
