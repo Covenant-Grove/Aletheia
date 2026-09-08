@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { Alert, Button, Input, Modal, Select } from '@aletheia/ui';
 import type {
   CreateScheduleSlotDto,
   DayOfWeek,
@@ -91,319 +92,107 @@ export function RoutineSlotModal({
   };
 
   return (
-    <div
-      data-testid="routine-slot-modal-overlay"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 50,
-        padding: '1rem',
-      }}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Novo Bloco de Rotina Semanal"
+      maxWidth="lg"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
+            Cancelar
+          </Button>
+          <Button type="submit" form="routine-slot-form" data-testid="save-slot-btn" isLoading={loading}>
+            Salvar Bloco
+          </Button>
+        </>
+      }
     >
-      <div
-        style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: '0.75rem',
-          padding: '1.5rem',
-          maxWidth: '32rem',
-          width: '100%',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', margin: 0 }}>
-            Novo Bloco de Rotina Semanal
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '1.25rem',
-              cursor: 'pointer',
-              color: '#6B7280',
-            }}
-          >
-            &times;
-          </button>
+      {error && (
+        <Alert variant="error" data-testid="slot-form-error" style={{ marginBottom: '1rem' }}>
+          {error}
+        </Alert>
+      )}
+
+      <form id="routine-slot-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <Input
+          label="Título da Atividade / Bloco *"
+          data-testid="slot-title-input"
+          required
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Ex: Devocional Matinal, Leitura Clássica, Matemática"
+        />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <Select
+            label="Dia da Semana *"
+            data-testid="slot-day-select"
+            value={dayOfWeek}
+            onChange={(e) => setDayOfWeek(Number(e.target.value) as DayOfWeek)}
+            options={DAYS_OF_WEEK.map((d) => ({ value: String(d.value), label: d.label }))}
+          />
+
+          <Input
+            label="Cor de Destaque"
+            type="color"
+            data-testid="slot-color-input"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+          />
         </div>
 
-        {error && (
-          <div
-            data-testid="slot-form-error"
-            style={{
-              backgroundColor: '#FEF2F2',
-              border: '1px solid #F87171',
-              color: '#B91C1C',
-              padding: '0.75rem',
-              borderRadius: '0.375rem',
-              fontSize: '0.875rem',
-              marginBottom: '1rem',
-            }}
-          >
-            {error}
-          </div>
-        )}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <Input
+            label="Horário Início *"
+            type="time"
+            data-testid="slot-start-time-input"
+            required
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+          />
+          <Input
+            label="Horário Término *"
+            type="time"
+            data-testid="slot-end-time-input"
+            required
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+          />
+        </div>
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '1rem' }}>
-            <label
-              htmlFor="slot-title"
-              style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.25rem' }}
-            >
-              Título da Atividade / Bloco *
-            </label>
-            <input
-              id="slot-title"
-              data-testid="slot-title-input"
-              type="text"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex: Devocional Matinal, Leitura Clássica, Matemática"
-              style={{
-                width: '100%',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '0.375rem',
-                border: '1px solid #D1D5DB',
-                fontSize: '0.875rem',
-              }}
-            />
-          </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <Select
+            label="Disciplina (Opcional)"
+            data-testid="slot-subject-select"
+            value={subjectId}
+            onChange={(e) => setSubjectId(e.target.value)}
+            options={[
+              { value: '', label: 'Nenhuma / Geral' },
+              ...subjects.map((sub) => ({ value: sub.id, label: sub.name })),
+            ]}
+          />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-            <div>
-              <label
-                htmlFor="slot-day"
-                style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.25rem' }}
-              >
-                Dia da Semana *
-              </label>
-              <select
-                id="slot-day"
-                data-testid="slot-day-select"
-                value={dayOfWeek}
-                onChange={(e) => setDayOfWeek(Number(e.target.value) as DayOfWeek)}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #D1D5DB',
-                  fontSize: '0.875rem',
-                  backgroundColor: '#FFFFFF',
-                }}
-              >
-                {DAYS_OF_WEEK.map((d) => (
-                  <option key={d.value} value={d.value}>
-                    {d.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <Select
+            label="Educando (Opcional)"
+            data-testid="slot-learner-select"
+            value={learnerId}
+            onChange={(e) => setLearnerId(e.target.value)}
+            options={[
+              { value: '', label: 'Toda a Família' },
+              ...learners.map((l) => ({ value: l.id, label: l.preferredName || l.firstName })),
+            ]}
+          />
+        </div>
 
-            <div>
-              <label
-                htmlFor="slot-color"
-                style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.25rem' }}
-              >
-                Cor de Destaque
-              </label>
-              <input
-                id="slot-color"
-                data-testid="slot-color-input"
-                type="color"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                style={{
-                  width: '100%',
-                  height: '38px',
-                  padding: '0.25rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #D1D5DB',
-                  cursor: 'pointer',
-                }}
-              />
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-            <div>
-              <label
-                htmlFor="slot-start-time"
-                style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.25rem' }}
-              >
-                Horário Início *
-              </label>
-              <input
-                id="slot-start-time"
-                data-testid="slot-start-time-input"
-                type="time"
-                required
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #D1D5DB',
-                  fontSize: '0.875rem',
-                }}
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="slot-end-time"
-                style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.25rem' }}
-              >
-                Horário Término *
-              </label>
-              <input
-                id="slot-end-time"
-                data-testid="slot-end-time-input"
-                type="time"
-                required
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #D1D5DB',
-                  fontSize: '0.875rem',
-                }}
-              />
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-            <div>
-              <label
-                htmlFor="slot-subject"
-                style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.25rem' }}
-              >
-                Disciplina (Opcional)
-              </label>
-              <select
-                id="slot-subject"
-                data-testid="slot-subject-select"
-                value={subjectId}
-                onChange={(e) => setSubjectId(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #D1D5DB',
-                  fontSize: '0.875rem',
-                  backgroundColor: '#FFFFFF',
-                }}
-              >
-                <option value="">Nenhuma / Geral</option>
-                {subjects.map((sub) => (
-                  <option key={sub.id} value={sub.id}>
-                    {sub.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label
-                htmlFor="slot-learner"
-                style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.25rem' }}
-              >
-                Educando (Opcional)
-              </label>
-              <select
-                id="slot-learner"
-                data-testid="slot-learner-select"
-                value={learnerId}
-                onChange={(e) => setLearnerId(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #D1D5DB',
-                  fontSize: '0.875rem',
-                  backgroundColor: '#FFFFFF',
-                }}
-              >
-                <option value="">Toda a Família</option>
-                {learners.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.preferredName || l.firstName}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div style={{ marginBottom: '1.25rem' }}>
-            <label
-              htmlFor="slot-location"
-              style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.25rem' }}
-            >
-              Local / Espaço (Opcional)
-            </label>
-            <input
-              id="slot-location"
-              data-testid="slot-location-input"
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Ex: Sala de Leitura, Mesa de Estudos, Ar Livre"
-              style={{
-                width: '100%',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '0.375rem',
-                border: '1px solid #D1D5DB',
-                fontSize: '0.875rem',
-              }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '0.375rem',
-                border: '1px solid #D1D5DB',
-                backgroundColor: '#FFFFFF',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                color: '#374151',
-                cursor: 'pointer',
-              }}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              data-testid="save-slot-btn"
-              disabled={loading}
-              style={{
-                padding: '0.5rem 1.25rem',
-                borderRadius: '0.375rem',
-                border: 'none',
-                backgroundColor: '#2563EB',
-                color: '#FFFFFF',
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                cursor: loading ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {loading ? 'Salvando...' : 'Salvar Bloco'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <Input
+          label="Local / Espaço (Opcional)"
+          data-testid="slot-location-input"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          placeholder="Ex: Sala de Leitura, Mesa de Estudos, Ar Livre"
+        />
+      </form>
+    </Modal>
   );
 }

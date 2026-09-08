@@ -180,7 +180,8 @@ describe('Devotional & Prayer Components', () => {
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/v1/families/f0000000-0000-0000-0000-000000000001/devotionals/scripture/lookup?reference=')
+          expect.stringContaining('/api/v1/families/f0000000-0000-0000-0000-000000000001/devotionals/scripture/lookup?reference='),
+          expect.objectContaining({ credentials: 'include' })
         );
       });
 
@@ -309,7 +310,6 @@ describe('Devotional & Prayer Components', () => {
           <DevotionalPage
             initialDevotional={mockDevotional}
             initialPrayers={[mockPetitionPrayer, mockGratitudePrayer]}
-            familyId="f0000000-0000-0000-0000-000000000001"
           />
         </AuthProvider>
       );

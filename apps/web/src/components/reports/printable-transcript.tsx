@@ -243,10 +243,12 @@ export function PrintableTranscript({
             Disciplinas & Avaliações Acadêmicas
           </h3>
 
+          <div style={{ overflowX: 'auto' }}>
           <table
             data-testid="subject-grades-table"
             style={{
               width: '100%',
+              minWidth: '640px',
               borderCollapse: 'collapse',
               fontSize: '0.875rem',
             }}
@@ -316,6 +318,7 @@ export function PrintableTranscript({
               )}
             </tbody>
           </table>
+          </div>
         </section>
 
         {/* Attendance Summary Section */}
