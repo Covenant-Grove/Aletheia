@@ -4,6 +4,22 @@ import { FamilyEntity } from '../domain/family.entity.js';
 import { FamilyMemberEntity } from '../domain/family-member.entity.js';
 import type { FamilyRole } from '../domain/family-role.js';
 
+// A family member is displayed by name in the UI (settings' "Responsáveis
+// & Educadores" list) — without this, every member falls back to a generic
+// "Membro" label since FamilyMemberDto.user is always undefined.
+const MEMBER_USER_INCLUDE = {
+  user: {
+    select: {
+      id: true,
+      email: true,
+      fullName: true,
+      emailVerifiedAt: true,
+      mfaEnabled: true,
+      createdAt: true,
+    },
+  },
+} as const;
+
 @Injectable()
 export class FamilyRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -25,7 +41,7 @@ export class FamilyRepository {
         },
       },
       include: {
-        members: true,
+        members: { include: MEMBER_USER_INCLUDE },
       },
     });
 
@@ -35,7 +51,7 @@ export class FamilyRepository {
   async findById(id: string): Promise<FamilyEntity | null> {
     const family = await this.prisma.family.findUnique({
       where: { id },
-      include: { members: true },
+      include: { members: { include: MEMBER_USER_INCLUDE } },
     });
     if (!family) return null;
     return this.mapToEntity(family);
@@ -46,7 +62,7 @@ export class FamilyRepository {
       where: { userId },
       include: {
         family: {
-          include: { members: true },
+          include: { members: { include: MEMBER_USER_INCLUDE } },
         },
       },
     });
@@ -80,6 +96,14 @@ export class FamilyRepository {
       role: string;
       createdAt: Date;
       updatedAt: Date;
+      user?: {
+        id: string;
+        email: string;
+        fullName: string;
+        emailVerifiedAt: Date | null;
+        mfaEnabled: boolean;
+        createdAt: Date;
+      };
     }>;
   }): FamilyEntity {
     const members = raw.members?.map(
@@ -91,6 +115,18 @@ export class FamilyRepository {
           role: m.role as FamilyRole,
           createdAt: m.createdAt,
           updatedAt: m.updatedAt,
+          ...(m.user
+            ? {
+                user: {
+                  id: m.user.id,
+                  email: m.user.email,
+                  fullName: m.user.fullName,
+                  emailVerified: m.user.emailVerifiedAt !== null,
+                  mfaEnabled: m.user.mfaEnabled,
+                  createdAt: m.user.createdAt.toISOString(),
+                },
+              }
+            : {}),
         }),
     );
 

@@ -116,8 +116,11 @@ export default function DevotionalPage({
 
   const handleSubmitDevotional = async (data: UpsertDailyDevotionalDto) => {
     if (!familyId) throw new Error('Família não autenticada');
-    const res = await fetch(`/api/v1/families/${encodeURIComponent(familyId)}/devotionals`, {
-      method: 'POST',
+    // The API models this as an upsert keyed by date, not a create — a
+    // second save for the same day edits the existing devotional instead
+    // of erroring on a duplicate.
+    const res = await fetch(`/api/v1/families/${encodeURIComponent(familyId)}/devotionals/by-date`, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify(data),

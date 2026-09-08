@@ -146,7 +146,7 @@ describe('Family dashboard E2E', () => {
       activeLearnerId: LEARNER_A_ID,
       journey: {
         completedMinutes: 45,
-        targetMinutes: 0,
+        targetMinutes: 65,
         completedLessons: 1,
         totalLessons: 1,
         daySequence: 0,

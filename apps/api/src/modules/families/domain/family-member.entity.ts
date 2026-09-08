@@ -1,5 +1,5 @@
 import type { FamilyRole } from './family-role.js';
-import type { FamilyMemberDto } from '@aletheia/contracts';
+import type { FamilyMemberDto, UserSummaryDto } from '@aletheia/contracts';
 
 export interface FamilyMemberProps {
   id: string;
@@ -8,6 +8,7 @@ export interface FamilyMemberProps {
   role: FamilyRole;
   createdAt: Date;
   updatedAt: Date;
+  user?: UserSummaryDto;
 }
 
 export class FamilyMemberEntity {
@@ -37,6 +38,10 @@ export class FamilyMemberEntity {
     return this.props.updatedAt;
   }
 
+  get user(): UserSummaryDto | undefined {
+    return this.props.user;
+  }
+
   toDto(): FamilyMemberDto {
     return {
       id: this.id,
@@ -45,6 +50,7 @@ export class FamilyMemberEntity {
       role: this.role,
       createdAt: this.createdAt.toISOString(),
       updatedAt: this.updatedAt.toISOString(),
+      ...(this.user ? { user: this.user } : {}),
     };
   }
 }
