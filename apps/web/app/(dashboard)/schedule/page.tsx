@@ -400,7 +400,7 @@ export default function SchedulePage() {
             activeLearnerId={activeLearnerId}
             onDateChange={setSelectedDate}
             onOpenCreateLesson={() => setIsLessonModalOpen(true)}
-            onOpenCreateSlot={() => handleOpenAddSlot(1)}
+            onOpenCreateSlot={() => handleOpenAddSlot(agenda.dayOfWeek)}
             onOpenCompleteLesson={handleOpenComplete}
             onOpenRescheduleLesson={handleOpenReschedule}
             onDeleteLesson={handleDeleteLesson}

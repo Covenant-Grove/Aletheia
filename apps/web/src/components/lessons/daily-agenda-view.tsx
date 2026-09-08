@@ -250,10 +250,23 @@ export function DailyAgendaView({
                   <Checkbox
                     data-testid={`complete-toggle-btn-${item.id}`}
                     checked={isCompleted}
+                    // Routine slots are a recurring weekly template with no
+                    // per-day completion record in the API (isCompleted is
+                    // always false for them) — routing this into the lesson
+                    // "complete" flow would 404 (it has no lesson plan to
+                    // complete). Disable it here instead of offering an
+                    // interaction that can never succeed; log attendance or
+                    // a learning record to track what actually happened.
+                    disabled={isRoutine && !onQuickToggleComplete}
+                    title={
+                      isRoutine && !onQuickToggleComplete
+                        ? 'Blocos de rotina não têm conclusão diária registrada — use Frequência ou o Diário de Aprendizagem.'
+                        : undefined
+                    }
                     onChange={() => {
                       if (onQuickToggleComplete) {
                         onQuickToggleComplete(item);
-                      } else if (!isCompleted) {
+                      } else if (!isCompleted && !isRoutine) {
                         onOpenCompleteLesson(item);
                       }
                     }}
