@@ -108,7 +108,13 @@ export class DashboardService {
             item.isCompleted ? total + minutesBetween(item.startTime, item.endTime) : total,
           0,
         ),
-        targetMinutes: 0,
+        // The day's full planned instruction time — every scheduled item,
+        // completed or not — so "X min of Y min" and the progress bar
+        // reflect the actual target instead of always reading 0/0%.
+        targetMinutes: agenda.items.reduce(
+          (total, item) => total + minutesBetween(item.startTime, item.endTime),
+          0,
+        ),
         completedLessons: lessonItems.filter((item) => item.isCompleted).length,
         totalLessons: lessonItems.length,
         daySequence: 0,

@@ -125,7 +125,7 @@ describe('DashboardService', () => {
       activeLearnerId: null,
       journey: {
         completedMinutes: 45,
-        targetMinutes: 0,
+        targetMinutes: 125,
         completedLessons: 2,
         totalLessons: 3,
         daySequence: 0,
