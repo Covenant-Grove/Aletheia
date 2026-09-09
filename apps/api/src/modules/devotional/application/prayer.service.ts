@@ -1,5 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrayerRepository } from '../infrastructure/prayer.repository.js';
+import {
+  FAMILY_PUBLIC_API,
+  type FamilyPublicApi,
+} from '../../families/application/public-api.js';
+import {
+  SETTINGS_PUBLIC_API,
+  type SettingsPublicApi,
+} from '../../settings/application/public-api.js';
 import type {
   AnswerPrayerDto,
   CreatePrayerDto,
@@ -9,7 +17,15 @@ import type {
 
 @Injectable()
 export class PrayerService {
-  constructor(private readonly prayerRepository: PrayerRepository) {}
+  private readonly logger = new Logger(PrayerService.name);
+
+  constructor(
+    private readonly prayerRepository: PrayerRepository,
+    @Inject(FAMILY_PUBLIC_API)
+    private readonly familyApi: FamilyPublicApi,
+    @Inject(SETTINGS_PUBLIC_API)
+    private readonly settingsApi: SettingsPublicApi,
+  ) {}
 
   async createPrayer(familyId: string, dto: CreatePrayerDto): Promise<PrayerResponseDto> {
     const prayer = await this.prayerRepository.create(familyId, dto);
@@ -57,7 +73,37 @@ export class PrayerService {
     if (!updated) {
       throw new NotFoundException(`Prayer request not found: ${id}`);
     }
+
+    await this.notifyPrayerAnswered(familyId, updated);
+
     return updated.toResponseDto();
+  }
+
+  // Best-effort: a notification failure must never undo an already-persisted
+  // "answered" status, so this never throws back into answerPrayer.
+  private async notifyPrayerAnswered(
+    familyId: string,
+    prayer: { id: string; title: string },
+  ): Promise<void> {
+    try {
+      const memberUserIds = await this.familyApi.getFamilyMemberUserIds(familyId);
+      await Promise.all(
+        memberUserIds.map((userId) =>
+          this.settingsApi.createNotification(familyId, {
+            userId,
+            type: 'PRAYER_ANSWERED_ALERT',
+            title: 'Oração respondida',
+            message: `"${prayer.title}" foi marcada como respondida.`,
+            linkUrl: '/devotional',
+            metadata: { prayerId: prayer.id },
+          }),
+        ),
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Failed to notify family ${familyId} about answered prayer ${prayer.id}: ${(error as Error).message}`,
+      );
+    }
   }
 
   async archivePrayer(familyId: string, id: string): Promise<PrayerResponseDto> {

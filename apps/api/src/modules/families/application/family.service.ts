@@ -52,4 +52,9 @@ export class FamilyService implements FamilyPublicApi {
     const family = await this.familyRepository.findById(familyId);
     return family ? family.toDto() : null;
   }
+
+  async getFamilyMemberUserIds(familyId: string): Promise<string[]> {
+    const family = await this.familyRepository.findById(familyId);
+    return family ? family.members.map((member) => member.userId) : [];
+  }
 }

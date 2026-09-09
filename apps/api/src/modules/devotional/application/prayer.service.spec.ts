@@ -2,11 +2,15 @@ import { NotFoundException } from '@nestjs/common';
 import { PrayerService } from './prayer.service.js';
 import { PrayerRepository } from '../infrastructure/prayer.repository.js';
 import { PrayerRequestEntity } from '../domain/prayer-request.entity.js';
+import type { FamilyPublicApi } from '../../families/application/public-api.js';
+import type { SettingsPublicApi } from '../../settings/application/public-api.js';
 import type { CreatePrayerDto, UpdatePrayerDto } from '@aletheia/contracts';
 
 describe('PrayerService', () => {
   let prayerService: PrayerService;
   let fakePrayers: Map<string, PrayerRequestEntity>;
+  let familyApi: jest.Mocked<FamilyPublicApi>;
+  let settingsApi: jest.Mocked<SettingsPublicApi>;
 
   beforeEach(() => {
     fakePrayers = new Map();
@@ -82,7 +86,18 @@ describe('PrayerService', () => {
       },
     } as unknown as PrayerRepository;
 
-    prayerService = new PrayerService(mockRepo);
+    familyApi = {
+      isGuardianInFamily: jest.fn().mockResolvedValue(true),
+      getFamilyForUser: jest.fn().mockResolvedValue(null),
+      getFamilyMemberUserIds: jest.fn().mockResolvedValue(['user-1', 'user-2']),
+    };
+    settingsApi = {
+      getSettings: jest.fn(),
+      createNotification: jest.fn().mockResolvedValue(undefined),
+      exportFamilyData: jest.fn(),
+    };
+
+    prayerService = new PrayerService(mockRepo, familyApi, settingsApi);
   });
 
   describe('createPrayer', () => {
@@ -157,6 +172,41 @@ describe('PrayerService', () => {
       await expect(
         prayerService.answerPrayer('fam-1', 'non-existent', { answeredNote: 'note' }),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('notifies every family member that the prayer was answered', async () => {
+      const created = await prayerService.createPrayer('fam-1', {
+        title: 'New job opportunity',
+      });
+
+      await prayerService.answerPrayer('fam-1', created.id, {
+        answeredNote: 'Accepted an offer today!',
+      });
+
+      expect(familyApi.getFamilyMemberUserIds).toHaveBeenCalledWith('fam-1');
+      expect(settingsApi.createNotification).toHaveBeenCalledTimes(2);
+      expect(settingsApi.createNotification).toHaveBeenCalledWith('fam-1', {
+        userId: 'user-1',
+        type: 'PRAYER_ANSWERED_ALERT',
+        title: 'Oração respondida',
+        message: '"New job opportunity" foi marcada como respondida.',
+        linkUrl: '/devotional',
+        metadata: { prayerId: created.id },
+      });
+    });
+
+    it('does not fail the request if notifying family members throws', async () => {
+      familyApi.getFamilyMemberUserIds.mockRejectedValueOnce(new Error('db down'));
+
+      const created = await prayerService.createPrayer('fam-1', {
+        title: 'Safe delivery',
+      });
+
+      const answered = await prayerService.answerPrayer('fam-1', created.id, {
+        answeredNote: 'Healthy baby!',
+      });
+
+      expect(answered.isAnswered).toBe(true);
     });
   });
 
