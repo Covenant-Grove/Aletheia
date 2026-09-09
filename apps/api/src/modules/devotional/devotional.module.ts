@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../../platform/database/database.module.js';
 import { EnvironmentModule } from '../../platform/config/environment.module.js';
+import { FamiliesModule } from '../families/families.module.js';
+import { SettingsModule } from '../settings/settings.module.js';
 import { DevotionalController } from './presentation/devotional.controller.js';
 import { PrayerController } from './presentation/prayer.controller.js';
 import { DevotionalRepository } from './infrastructure/devotional.repository.js';
@@ -11,7 +13,7 @@ import { PrayerService } from './application/prayer.service.js';
 import { DEVOTIONAL_PUBLIC_API } from './application/public-api.js';
 
 @Module({
-  imports: [DatabaseModule, EnvironmentModule],
+  imports: [DatabaseModule, EnvironmentModule, FamiliesModule, SettingsModule],
   controllers: [DevotionalController, PrayerController],
   providers: [
     YouVersionService,
