@@ -3,6 +3,7 @@ import type {
   CreateNotificationDto,
   NotificationFilterDto,
   NotificationItemResponseDto,
+  NotificationType,
 } from '@aletheia/contracts';
 import { NotificationRepository } from '../infrastructure/notification.repository.js';
 
@@ -56,5 +57,13 @@ export class NotificationService {
   async getUnreadCount(familyId: string, userId: string): Promise<{ count: number }> {
     const count = await this.notificationRepository.countUnread(familyId, userId);
     return { count };
+  }
+
+  async wasNotifiedSince(
+    familyId: string,
+    type: NotificationType,
+    since: Date,
+  ): Promise<boolean> {
+    return this.notificationRepository.existsSince(familyId, type, since);
   }
 }

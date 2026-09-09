@@ -15,6 +15,7 @@ import { RecordsModule } from './modules/records/records.module.js';
 import { ReportsModule } from './modules/reports/reports.module.js';
 import { SettingsModule } from './modules/settings/settings.module.js';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
+import { RemindersModule } from './modules/reminders/reminders.module.js';
 import { LearnerAccessModule } from './modules/learner-access/learner-access.module.js';
 
 @Module({
@@ -45,6 +46,7 @@ import { LearnerAccessModule } from './modules/learner-access/learner-access.mod
     ReportsModule,
     SettingsModule,
     DashboardModule,
+    RemindersModule,
     LearnerAccessModule,
   ],
   providers: [
