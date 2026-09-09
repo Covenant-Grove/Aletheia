@@ -77,7 +77,11 @@ describe('FamilySettingsService', () => {
       },
     } as unknown as FamilySettingsRepository;
 
-    service = new FamilySettingsService(mockRepo);
+    const mockNotificationService = {
+      createNotification: async () => ({}) as never,
+    } as unknown as import('./notification.service.js').NotificationService;
+
+    service = new FamilySettingsService(mockRepo, mockNotificationService);
   });
 
   describe('getSettings', () => {

@@ -3,14 +3,14 @@ import { PrayerService } from './prayer.service.js';
 import { PrayerRepository } from '../infrastructure/prayer.repository.js';
 import { PrayerRequestEntity } from '../domain/prayer-request.entity.js';
 import type { FamilyPublicApi } from '../../families/application/public-api.js';
-import type { NotificationService } from '../../settings/application/notification.service.js';
+import type { SettingsPublicApi } from '../../settings/application/public-api.js';
 import type { CreatePrayerDto, UpdatePrayerDto } from '@aletheia/contracts';
 
 describe('PrayerService', () => {
   let prayerService: PrayerService;
   let fakePrayers: Map<string, PrayerRequestEntity>;
   let familyApi: jest.Mocked<FamilyPublicApi>;
-  let notificationService: jest.Mocked<NotificationService>;
+  let settingsApi: jest.Mocked<SettingsPublicApi>;
 
   beforeEach(() => {
     fakePrayers = new Map();
@@ -91,11 +91,13 @@ describe('PrayerService', () => {
       getFamilyForUser: jest.fn().mockResolvedValue(null),
       getFamilyMemberUserIds: jest.fn().mockResolvedValue(['user-1', 'user-2']),
     };
-    notificationService = {
+    settingsApi = {
+      getSettings: jest.fn(),
       createNotification: jest.fn().mockResolvedValue(undefined),
-    } as unknown as jest.Mocked<NotificationService>;
+      exportFamilyData: jest.fn(),
+    };
 
-    prayerService = new PrayerService(mockRepo, familyApi, notificationService);
+    prayerService = new PrayerService(mockRepo, familyApi, settingsApi);
   });
 
   describe('createPrayer', () => {
@@ -182,8 +184,8 @@ describe('PrayerService', () => {
       });
 
       expect(familyApi.getFamilyMemberUserIds).toHaveBeenCalledWith('fam-1');
-      expect(notificationService.createNotification).toHaveBeenCalledTimes(2);
-      expect(notificationService.createNotification).toHaveBeenCalledWith('fam-1', {
+      expect(settingsApi.createNotification).toHaveBeenCalledTimes(2);
+      expect(settingsApi.createNotification).toHaveBeenCalledWith('fam-1', {
         userId: 'user-1',
         type: 'PRAYER_ANSWERED_ALERT',
         title: 'Oração respondida',

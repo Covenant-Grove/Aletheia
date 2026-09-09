@@ -4,7 +4,10 @@ import {
   FAMILY_PUBLIC_API,
   type FamilyPublicApi,
 } from '../../families/application/public-api.js';
-import { NotificationService } from '../../settings/application/notification.service.js';
+import {
+  SETTINGS_PUBLIC_API,
+  type SettingsPublicApi,
+} from '../../settings/application/public-api.js';
 import type {
   AnswerPrayerDto,
   CreatePrayerDto,
@@ -20,7 +23,8 @@ export class PrayerService {
     private readonly prayerRepository: PrayerRepository,
     @Inject(FAMILY_PUBLIC_API)
     private readonly familyApi: FamilyPublicApi,
-    private readonly notificationService: NotificationService,
+    @Inject(SETTINGS_PUBLIC_API)
+    private readonly settingsApi: SettingsPublicApi,
   ) {}
 
   async createPrayer(familyId: string, dto: CreatePrayerDto): Promise<PrayerResponseDto> {
@@ -85,7 +89,7 @@ export class PrayerService {
       const memberUserIds = await this.familyApi.getFamilyMemberUserIds(familyId);
       await Promise.all(
         memberUserIds.map((userId) =>
-          this.notificationService.createNotification(familyId, {
+          this.settingsApi.createNotification(familyId, {
             userId,
             type: 'PRAYER_ANSWERED_ALERT',
             title: 'Oração respondida',
