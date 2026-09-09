@@ -505,6 +505,33 @@ describe('AuthService', () => {
     expect(loginResult.user.email).toBe('login@example.com');
   });
 
+  it('issues a session token that verifyToken accepts', async () => {
+    await authService.register({
+      email: 'verify@example.com',
+      fullName: 'User',
+      password: 'securePassword888',
+    });
+
+    const loginResult = await authService.login({
+      email: 'verify@example.com',
+      password: 'securePassword888',
+    });
+
+    const payload = await authService.verifyToken(
+      (loginResult as { accessToken: string }).accessToken,
+    );
+    expect(payload?.email).toBe('verify@example.com');
+  });
+
+  it('rejects a token missing the guardian_session typ claim', async () => {
+    const tokenWithoutTyp = await jwtService.signAsync({
+      sub: 'some-user-id',
+      email: 'someone@example.com',
+    });
+
+    await expect(authService.verifyToken(tokenWithoutTyp)).resolves.toBeNull();
+  });
+
   it('rejects invalid password on login', async () => {
     await authService.register({
       email: 'wrongpass@example.com',

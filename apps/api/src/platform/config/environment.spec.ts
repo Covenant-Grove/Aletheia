@@ -32,11 +32,16 @@ class EnvironmentConsumerModule {}
 
 describe('parseEnvironment', () => {
   const validJwtSecret = 'unit_test_jwt_secret_key_1234567890';
+  const validLearnerJwtSecret = 'unit_test_learner_jwt_secret_key_0987654321';
   const validMfaEncryptionKey = '0123456789abcdef'.repeat(4);
 
   it('rejects a missing database URL', () => {
     expect(() =>
-      parseEnvironment({ NODE_ENV: 'development', JWT_SECRET: validJwtSecret }),
+      parseEnvironment({
+        NODE_ENV: 'development',
+        JWT_SECRET: validJwtSecret,
+        LEARNER_SESSION_JWT_SECRET: validLearnerJwtSecret,
+      }),
     ).toThrow('DATABASE_URL is required');
   });
 
@@ -45,6 +50,7 @@ describe('parseEnvironment', () => {
       parseEnvironment({
         NODE_ENV: 'development',
         DATABASE_URL: 'postgresql://user:pass@localhost:5432/aletheia',
+        LEARNER_SESSION_JWT_SECRET: validLearnerJwtSecret,
       }),
     ).toThrow('JWT_SECRET is required');
   });
@@ -55,8 +61,30 @@ describe('parseEnvironment', () => {
         NODE_ENV: 'development',
         DATABASE_URL: 'postgresql://user:pass@localhost:5432/aletheia',
         JWT_SECRET: 'too-short',
+        LEARNER_SESSION_JWT_SECRET: validLearnerJwtSecret,
       }),
     ).toThrow('JWT_SECRET is required and must be at least 16 characters long');
+  });
+
+  it('rejects a missing learner session JWT secret', () => {
+    expect(() =>
+      parseEnvironment({
+        NODE_ENV: 'development',
+        DATABASE_URL: 'postgresql://user:pass@localhost:5432/aletheia',
+        JWT_SECRET: validJwtSecret,
+      }),
+    ).toThrow('LEARNER_SESSION_JWT_SECRET is required');
+  });
+
+  it('rejects a learner session JWT secret identical to the guardian JWT secret', () => {
+    expect(() =>
+      parseEnvironment({
+        NODE_ENV: 'development',
+        DATABASE_URL: 'postgresql://user:pass@localhost:5432/aletheia',
+        JWT_SECRET: validJwtSecret,
+        LEARNER_SESSION_JWT_SECRET: validJwtSecret,
+      }),
+    ).toThrow('LEARNER_SESSION_JWT_SECRET must differ from JWT_SECRET');
   });
 
   it.each([
@@ -68,6 +96,7 @@ describe('parseEnvironment', () => {
       NODE_ENV: nodeEnv,
       DATABASE_URL: 'postgresql://user:pass@localhost:5432/aletheia',
       JWT_SECRET: validJwtSecret,
+      LEARNER_SESSION_JWT_SECRET: validLearnerJwtSecret,
       MFA_ENCRYPTION_KEY: validMfaEncryptionKey,
     });
     expect(result.logLevel).toBe(expectedLevel);
@@ -78,6 +107,7 @@ describe('parseEnvironment', () => {
       NODE_ENV: 'production',
       DATABASE_URL: 'postgresql://user:pass@localhost:5432/aletheia',
       JWT_SECRET: validJwtSecret,
+      LEARNER_SESSION_JWT_SECRET: validLearnerJwtSecret,
       MFA_ENCRYPTION_KEY: validMfaEncryptionKey,
       LOG_LEVEL: 'warn',
     });
@@ -90,6 +120,7 @@ describe('parseEnvironment', () => {
         NODE_ENV: 'test',
         DATABASE_URL: 'postgresql://user:pass@localhost:5432/aletheia',
         JWT_SECRET: validJwtSecret,
+        LEARNER_SESSION_JWT_SECRET: validLearnerJwtSecret,
         MFA_ENCRYPTION_KEY: validMfaEncryptionKey,
       }),
     ).toMatchObject({
@@ -107,6 +138,7 @@ describe('parseEnvironment', () => {
         NODE_ENV: 'production',
         DATABASE_URL: 'postgresql://user:pass@localhost:5432/aletheia',
         JWT_SECRET: validJwtSecret,
+        LEARNER_SESSION_JWT_SECRET: validLearnerJwtSecret,
         MFA_ENCRYPTION_KEY: validMfaEncryptionKey,
         CORS_ORIGIN: 'https://app.example.com, https://admin.example.com ',
       }),
@@ -121,6 +153,7 @@ describe('parseEnvironment', () => {
         NODE_ENV: 'test',
         DATABASE_URL: 'postgresql://user:pass@localhost:5432/aletheia',
         JWT_SECRET: validJwtSecret,
+        LEARNER_SESSION_JWT_SECRET: validLearnerJwtSecret,
         MFA_ENCRYPTION_KEY: validMfaEncryptionKey,
       }),
     ).toMatchObject({
@@ -136,6 +169,7 @@ describe('parseEnvironment', () => {
         NODE_ENV: 'production',
         DATABASE_URL: 'postgresql://user:pass@localhost:5432/aletheia',
         JWT_SECRET: validJwtSecret,
+        LEARNER_SESSION_JWT_SECRET: validLearnerJwtSecret,
         MFA_ENCRYPTION_KEY: validMfaEncryptionKey,
         RESEND_API_KEY: 're_test_key_123',
         MAIL_FROM_ADDRESS: 'Aletheia <hello@aletheia.family>',
@@ -154,6 +188,7 @@ describe('parseEnvironment', () => {
         NODE_ENV: 'production',
         DATABASE_URL: 'postgresql://user:pass@db:5432/aletheia',
         JWT_SECRET: validJwtSecret,
+        LEARNER_SESSION_JWT_SECRET: validLearnerJwtSecret,
         MFA_ENCRYPTION_KEY: validMfaEncryptionKey,
         CORS_ORIGIN: 'https://app.example.com',
         REDIS_URL: 'redis://cache:6379',
@@ -168,6 +203,7 @@ describe('parseEnvironment', () => {
       databaseUrl: 'postgresql://user:pass@db:5432/aletheia',
       redisUrl: 'redis://cache:6379',
       jwtSecret: validJwtSecret,
+      learnerSessionJwtSecret: validLearnerJwtSecret,
       mfaEncryptionKey: validMfaEncryptionKey,
       corsOrigins: ['https://app.example.com'],
       resendApiKey: null,
@@ -199,6 +235,7 @@ describe('parseEnvironment', () => {
           NODE_ENV: 'development',
           DATABASE_URL: 'postgresql://user:pass@localhost:5432/aletheia',
           JWT_SECRET: validJwtSecret,
+          LEARNER_SESSION_JWT_SECRET: validLearnerJwtSecret,
           MFA_ENCRYPTION_KEY: validMfaEncryptionKey,
           S3_ENDPOINT: 'http://localhost:9000',
           S3_ACCESS_KEY: 'access-key',
@@ -215,6 +252,7 @@ describe('parseEnvironment', () => {
       'NODE_ENV',
       'DATABASE_URL',
       'JWT_SECRET',
+      'LEARNER_SESSION_JWT_SECRET',
       'REDIS_URL',
       'S3_ENDPOINT',
       'S3_ACCESS_KEY',
@@ -229,7 +267,8 @@ describe('parseEnvironment', () => {
     process.env.DATABASE_URL =
       'postgresql://user:pass@localhost:5432/aletheia';
     process.env.JWT_SECRET = validJwtSecret;
-    for (const name of variableNames.slice(3)) {
+    process.env.LEARNER_SESSION_JWT_SECRET = validLearnerJwtSecret;
+    for (const name of variableNames.slice(4)) {
       delete process.env[name];
     }
 

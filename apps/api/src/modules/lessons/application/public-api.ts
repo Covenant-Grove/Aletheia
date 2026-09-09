@@ -1,4 +1,5 @@
 import type {
+  CompleteLessonDto,
   CreateLessonPlanDto,
   DailyAgendaDto,
   LessonPlanResponseDto,
@@ -10,6 +11,12 @@ export interface LessonPlanPublicApi {
   createLessonPlan(familyId: string, dto: CreateLessonPlanDto): Promise<LessonPlanResponseDto>;
   getLessonPlan(familyId: string, id: string): Promise<LessonPlanResponseDto>;
   listLessonPlans(familyId: string): Promise<LessonPlanResponseDto[]>;
+  completeLesson(
+    familyId: string,
+    id: string,
+    dto: CompleteLessonDto,
+    learnerId?: string,
+  ): Promise<LessonPlanResponseDto>;
 }
 
 export const SCHEDULE_PUBLIC_API = Symbol('SCHEDULE_PUBLIC_API');

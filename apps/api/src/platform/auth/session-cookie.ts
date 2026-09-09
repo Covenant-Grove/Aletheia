@@ -3,6 +3,7 @@ import type { Environment } from '../config/environment.js';
 
 export const SESSION_COOKIE_NAME = 'aletheia_session';
 export const REFRESH_COOKIE_NAME = 'aletheia_refresh';
+export const LEARNER_SESSION_COOKIE_NAME = 'aletheia_learner_session';
 
 // Matches the access token's own JWT expiry — the cookie shouldn't outlive
 // the token it carries.
@@ -48,4 +49,26 @@ export function setRefreshCookie(
 
 export function clearRefreshCookie(reply: FastifyReply): void {
   reply.clearCookie(REFRESH_COOKIE_NAME, { path: REFRESH_COOKIE_PATH });
+}
+
+// A school-day session -- long enough that a child doesn't need to retype
+// their code mid-morning, short enough to force a fresh login the next day.
+const LEARNER_SESSION_MAX_AGE_SECONDS = 8 * 60 * 60;
+
+export function setLearnerSessionCookie(
+  reply: FastifyReply,
+  token: string,
+  environment: Environment,
+): void {
+  reply.setCookie(LEARNER_SESSION_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: environment.nodeEnv === 'production',
+    sameSite: environment.nodeEnv === 'production' ? 'none' : 'lax',
+    path: '/',
+    maxAge: LEARNER_SESSION_MAX_AGE_SECONDS,
+  });
+}
+
+export function clearLearnerSessionCookie(reply: FastifyReply): void {
+  reply.clearCookie(LEARNER_SESSION_COOKIE_NAME, { path: '/' });
 }

@@ -221,10 +221,39 @@ model Learner {
   attendanceRecords  AttendanceRecord[]
   complianceRequirements ComplianceRequirement[]
   officialReports    OfficialReport[]
+  accessGrant        LearnerAccessGrant?
 
   @@index([familyId])
   @@index([familyId, archivedAt])
   @@map("learners")
+}
+
+model LearnerAccessGrant {
+  id            String    @id @default(uuid()) @db.Uuid
+  learnerId     String    @unique @map("learner_id") @db.Uuid
+  familyId      String    @map("family_id") @db.Uuid
+  codeHash      String    @map("code_hash")
+  enabled       Boolean   @default(false)
+  createdBy     String    @map("created_by") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  regeneratedAt DateTime? @map("regenerated_at") @db.Timestamptz
+  revokedAt     DateTime? @map("revoked_at") @db.Timestamptz
+  lastUsedAt    DateTime? @map("last_used_at") @db.Timestamptz
+
+  learner Learner @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+
+  @@index([familyId])
+  @@map("learner_access_grants")
+}
+
+model LearnerAccessAttempt {
+  id           String    @id @default(uuid()) @db.Uuid
+  learnerId    String    @unique @map("learner_id") @db.Uuid
+  attemptCount Int       @default(0) @map("attempt_count")
+  lockedUntil  DateTime? @map("locked_until") @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("learner_access_attempts")
 }
 
 model FamilyMember {

@@ -440,7 +440,18 @@ export class AuthService implements IdentityPublicApi {
 
   async verifyToken(token: string): Promise<AuthenticatedUserPayload | null> {
     try {
-      const decoded = await this.jwtService.verifyAsync<{ sub: string; email: string }>(token);
+      const decoded = await this.jwtService.verifyAsync<{
+        sub: string;
+        email: string;
+        typ?: string;
+      }>(token);
+      // Defense in depth: the learner-session JWT is signed with a wholly
+      // separate secret (so it already fails verifyAsync above), but this
+      // claim check guards against a future refactor accidentally pointing
+      // the learner-token issuer at this shared JwtService.
+      if (decoded.typ !== 'guardian_session') {
+        return null;
+      }
       return {
         userId: decoded.sub,
         email: decoded.email,
@@ -461,7 +472,10 @@ export class AuthService implements IdentityPublicApi {
     user: UserSummaryDto,
   ): Promise<AuthSession> {
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync({ sub: userId, email }, { expiresIn: ACCESS_TOKEN_TTL }),
+      this.jwtService.signAsync(
+        { sub: userId, email, typ: 'guardian_session' },
+        { expiresIn: ACCESS_TOKEN_TTL },
+      ),
       this.refreshTokenRepository.issue(userId),
     ]);
 
