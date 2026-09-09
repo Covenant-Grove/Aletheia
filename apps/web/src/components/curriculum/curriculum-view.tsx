@@ -132,6 +132,12 @@ export function CurriculumView({
           <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem', marginBottom: 0 }}>
             Planejamento pedagógico, matriz de disciplinas, ementas e objetivos de aprendizagem.
           </p>
+          {activeLearner && (
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem', marginBottom: 0 }}>
+              Disciplinas são compartilhadas por toda a família; os objetivos abaixo são específicos de{' '}
+              {activeLearner.preferredName || activeLearner.firstName}.
+            </p>
+          )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
