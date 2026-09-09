@@ -258,13 +258,18 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        {/* Tab switcher */}
+        {/* Tab switcher -- scrolls horizontally within itself on narrow
+            viewports instead of widening the whole page (5 tabs don't fit
+            390px), so the rest of the page never picks up a sideways
+            scrollbar just to reach the last tab. */}
         <div
           style={{
             display: 'flex',
             borderBottom: '1px solid var(--border-light)',
             marginBottom: '2rem',
             gap: '0.5rem',
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
           }}
         >
           <button
