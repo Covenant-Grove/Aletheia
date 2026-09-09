@@ -159,7 +159,7 @@ export default function DevotionalPage({
   const handleAnswerPrayer = async (id: string, answeredNote?: string) => {
     if (!familyId) throw new Error('Família não autenticada');
     const res = await fetch(`/api/v1/families/${encodeURIComponent(familyId)}/prayers/${encodeURIComponent(id)}/answer`, {
-      method: 'PATCH',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ answeredNote }),
@@ -176,8 +176,8 @@ export default function DevotionalPage({
 
   const handleArchivePrayer = async (id: string) => {
     if (!familyId) throw new Error('Família não autenticada');
-    const res = await fetch(`/api/v1/families/${encodeURIComponent(familyId)}/prayers/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
+    const res = await fetch(`/api/v1/families/${encodeURIComponent(familyId)}/prayers/${encodeURIComponent(id)}/archive`, {
+      method: 'POST',
       credentials: 'include',
     });
 
