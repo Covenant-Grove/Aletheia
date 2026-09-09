@@ -8,6 +8,7 @@ export interface Environment {
   databaseUrl: string;
   redisUrl: string | null;
   jwtSecret: string;
+  learnerSessionJwtSecret: string;
   mfaEncryptionKey: string;
   corsOrigins: string[];
   resendApiKey: string | null;
@@ -52,6 +53,13 @@ const environmentSchema = z
         .trim()
         .min(16, 'JWT_SECRET is required and must be at least 16 characters long'),
     ),
+    LEARNER_SESSION_JWT_SECRET: z.preprocess(
+      (value) => value ?? '',
+      z
+        .string()
+        .trim()
+        .min(16, 'LEARNER_SESSION_JWT_SECRET is required and must be at least 16 characters long'),
+    ),
     MFA_ENCRYPTION_KEY: z.preprocess(
       (value) => value ?? '',
       z
@@ -70,6 +78,19 @@ const environmentSchema = z
     S3_BUCKET: optionalValue,
   })
   .superRefine((environment, context) => {
+    if (
+      environment.JWT_SECRET &&
+      environment.LEARNER_SESSION_JWT_SECRET &&
+      environment.JWT_SECRET === environment.LEARNER_SESSION_JWT_SECRET
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message:
+          'LEARNER_SESSION_JWT_SECRET must differ from JWT_SECRET -- a learner session token must never be verifiable as a guardian session token.',
+        path: ['LEARNER_SESSION_JWT_SECRET'],
+      });
+    }
+
     const objectStorageValues = [
       environment.S3_ENDPOINT,
       environment.S3_ACCESS_KEY,
@@ -104,6 +125,7 @@ const environmentSchema = z
       databaseUrl: environment.DATABASE_URL,
       redisUrl: environment.REDIS_URL ?? null,
       jwtSecret: environment.JWT_SECRET,
+      learnerSessionJwtSecret: environment.LEARNER_SESSION_JWT_SECRET,
       mfaEncryptionKey: environment.MFA_ENCRYPTION_KEY,
       corsOrigins: environment.CORS_ORIGIN
         ? environment.CORS_ORIGIN.split(',')
