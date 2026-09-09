@@ -28,6 +28,7 @@ import {
   type PermissionAction,
 } from '../../lib/auth/rbac-context';
 import { NotificationBell } from './notification-bell';
+import { useNotifications } from './use-notifications';
 import { LearnerFocusSwitcher } from './learner-focus-switcher';
 import { RoleBadge } from '../auth/role-badge';
 
@@ -114,6 +115,21 @@ export function ProductShell({
   const existingRbac = useAuthRole();
   const activePath = currentPath ?? pathname;
 
+  // Derive active family id up front (moved ahead of the early returns
+  // below) so it's available to the notifications fallback hook, which
+  // like every other hook here must run unconditionally on every render.
+  const activeFamilyId: string | null =
+    familyId !== undefined
+      ? familyId
+      : (authContext?.activeFamilyId ?? existingRbac?.familyId ?? null);
+
+  // Self-fetches only when the caller hasn't already supplied notification
+  // props — most pages never wire these up themselves, which used to mean
+  // the bell only ever appeared on the Settings page.
+  const notificationsFallback = useNotifications(
+    notifications === undefined ? activeFamilyId : null,
+  );
+
   // Only redirect when this shell is actually driven by the real session
   // (no explicit `user` prop and no outer RBAC override) — same escape
   // hatch the loading branch below uses, so storybook/tests that inject a
@@ -140,14 +156,12 @@ export function ProductShell({
         />
       )}
 
-      {notifications !== undefined && onMarkNotificationAsRead !== undefined && (
+      {(notifications !== undefined || activeFamilyId !== null) && (
         <NotificationBell
-          notifications={notifications}
-          unreadCount={unreadCount}
-          onMarkAsRead={onMarkNotificationAsRead}
-          {...(onMarkAllNotificationsAsRead !== undefined
-            ? { onMarkAllAsRead: onMarkAllNotificationsAsRead }
-            : {})}
+          notifications={notifications ?? notificationsFallback.notifications}
+          unreadCount={notifications !== undefined ? unreadCount : notificationsFallback.unreadCount}
+          onMarkAsRead={onMarkNotificationAsRead ?? notificationsFallback.markAsRead}
+          onMarkAllAsRead={onMarkAllNotificationsAsRead ?? notificationsFallback.markAllAsRead}
         />
       )}
     </div>
@@ -185,12 +199,6 @@ export function ProductShell({
     authContext?.activeRole ??
     existingRbac?.role ??
     null;
-
-  // Derive active family id
-  const activeFamilyId: string | null =
-    familyId !== undefined
-      ? familyId
-      : (authContext?.activeFamilyId ?? existingRbac?.familyId ?? null);
 
   // Derive truthful profile user
   const profileUser: UserProfileSummary | undefined = user
