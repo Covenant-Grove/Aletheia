@@ -3,6 +3,7 @@ import type {
   CreateNotificationDto,
   FamilySettingsResponseDto,
   NotificationItemResponseDto,
+  NotificationType,
   UpdateFamilySettingsDto,
 } from '@aletheia/contracts';
 import { FamilySettingsRepository } from '../infrastructure/family-settings.repository.js';
@@ -37,5 +38,18 @@ export class FamilySettingsService {
     dto: CreateNotificationDto,
   ): Promise<NotificationItemResponseDto> {
     return this.notificationService.createNotification(familyId, dto);
+  }
+
+  async wasNotifiedSince(
+    familyId: string,
+    type: NotificationType,
+    since: Date,
+  ): Promise<boolean> {
+    return this.notificationService.wasNotifiedSince(familyId, type, since);
+  }
+
+  async listFamiliesWithRemindersEnabled(): Promise<FamilySettingsResponseDto[]> {
+    const settings = await this.settingsRepository.findAllWithRemindersEnabled();
+    return settings.map((entity) => entity.toResponseDto());
   }
 }

@@ -88,6 +88,17 @@ export class NotificationRepository {
     return records.map((record) => this.mapToEntity(record as NotificationDbRecord));
   }
 
+  async existsSince(familyId: string, type: NotificationType, since: Date): Promise<boolean> {
+    const count = await this.prisma.notificationItem.count({
+      where: {
+        familyId,
+        type,
+        createdAt: { gte: since },
+      },
+    });
+    return count > 0;
+  }
+
   async countUnread(familyId: string, userId: string): Promise<number> {
     return this.prisma.notificationItem.count({
       where: {

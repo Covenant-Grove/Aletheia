@@ -59,6 +59,22 @@ export class FamilySettingsRepository {
     return this.mapToEntity(created as FamilySettingsDbRecord);
   }
 
+  // Scoped to families that opted into at least one reminder so the
+  // per-minute scheduler tick doesn't load every family's settings row.
+  async findAllWithRemindersEnabled(): Promise<FamilySettingsEntity[]> {
+    const records = await this.prisma.familySettings.findMany({
+      where: {
+        OR: [
+          { devotionalReminderTime: { not: null } },
+          { dailyScheduleReminderTime: { not: null } },
+          { attendanceReminderEnabled: true },
+        ],
+      },
+    });
+
+    return records.map((record) => this.mapToEntity(record as FamilySettingsDbRecord));
+  }
+
   async upsert(familyId: string, dto: UpdateFamilySettingsDto): Promise<FamilySettingsEntity> {
     const homeschoolName =
       dto.homeschoolName !== undefined ? (dto.homeschoolName?.trim() || null) : undefined;
