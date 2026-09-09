@@ -252,7 +252,7 @@ export function AttendanceTrackerView({
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <Can action="log_attendance">
             <Button
               variant="secondary"
