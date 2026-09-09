@@ -94,6 +94,8 @@ describe('PrayerService', () => {
     settingsApi = {
       getSettings: jest.fn(),
       createNotification: jest.fn().mockResolvedValue(undefined),
+      wasNotifiedSince: jest.fn().mockResolvedValue(false),
+      listFamiliesWithRemindersEnabled: jest.fn().mockResolvedValue([]),
       exportFamilyData: jest.fn(),
     };
 
