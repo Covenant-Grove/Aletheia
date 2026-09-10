@@ -924,6 +924,7 @@ model LearningDomain {
   children      LearningDomain[]       @relation("LearningDomainHierarchy")
   competencies  CompetencyDefinition[]
   learningPaths LearningPath[]
+  curriculumLinks CurriculumDefinitionDomain[]
 
   @@unique([code, version])
   @@index([code])
@@ -951,6 +952,7 @@ model CompetencyDefinition {
   path          LearningPath?    @relation(fields: [pathId], references: [id], onDelete: SetNull)
   skills        SkillDefinition[]
   rubrics       RubricDefinition[]
+  curriculumLinks CurriculumDefinitionCompetency[]
 
   @@unique([code, version])
   @@index([code])
@@ -1039,6 +1041,7 @@ model RubricDefinition {
 
   competency    CompetencyDefinition? @relation(fields: [competencyId], references: [id], onDelete: SetNull)
   criteria      RubricCriterion[]
+  curriculumLinks CurriculumDefinitionRubric[]
 
   @@unique([code, version])
   @@index([code])
@@ -1088,6 +1091,8 @@ model PedagogicalModelDefinition {
   publishedAt   DateTime?        @map("published_at") @db.Timestamptz
   deprecatedAt  DateTime?        @map("deprecated_at") @db.Timestamptz
 
+  curricula     CurriculumDefinition[]
+
   @@unique([code, version])
   @@index([code])
   @@index([status])
@@ -1118,5 +1123,94 @@ model EvidenceTypeDefinition {
   @@index([code])
   @@index([status])
   @@map("evidence_type_definitions")
+}
+
+// Curriculum definition: the top-level composition (issue #96 sections 3
+// and 23) -- a named, versioned bundle that references a pedagogical
+// model and a set of learning domains/competencies/rubrics. This is what
+// a family's future PedagogicalProfile (Fase 1, not this slice) will
+// eventually point to, so its shape is kept deliberately free of
+// family-specific fields (no familyId, no per-family overrides here --
+// those belong on the profile, not the shared definition).
+//
+// Domains/competencies/rubrics are real join tables, not JSON arrays of
+// IDs, so references are FK-checked and queryable (section 30/31). There
+// is deliberately no "activities" reference yet -- no ActivityDefinition
+// table exists (issue #96 section 7 is a later slice), so wiring that in
+// now would mean referencing something that doesn't exist. "Referencia
+// avaliações" is covered by the rubrics join below.
+model CurriculumDefinition {
+  id            String                       @id @default(uuid()) @db.Uuid
+  code          String
+  version       Int                          @default(1)
+  status        DefinitionStatus             @default(DRAFT)
+  schemaVersion String                       @default("1.0.0") @map("schema_version")
+  name          String
+  description   String?
+  pedagogicalModelDefinitionId String?        @map("pedagogical_model_definition_id") @db.Uuid
+  metadata      Json                         @default("{}")
+  createdAt     DateTime                     @default(now()) @map("created_at") @db.Timestamptz
+  publishedAt   DateTime?                    @map("published_at") @db.Timestamptz
+  deprecatedAt  DateTime?                    @map("deprecated_at") @db.Timestamptz
+
+  pedagogicalModel PedagogicalModelDefinition? @relation(fields: [pedagogicalModelDefinitionId], references: [id], onDelete: SetNull)
+  domains       CurriculumDefinitionDomain[]
+  competencies  CurriculumDefinitionCompetency[]
+  rubrics       CurriculumDefinitionRubric[]
+
+  @@unique([code, version])
+  @@index([code])
+  @@index([pedagogicalModelDefinitionId])
+  @@index([status])
+  @@map("curriculum_definitions")
+}
+
+model CurriculumDefinitionDomain {
+  id                     String   @id @default(uuid()) @db.Uuid
+  curriculumDefinitionId String   @map("curriculum_definition_id") @db.Uuid
+  domainId               String   @map("domain_id") @db.Uuid
+  required               Boolean  @default(true)
+  order                  Int      @default(0)
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  curriculumDefinition CurriculumDefinition @relation(fields: [curriculumDefinitionId], references: [id], onDelete: Cascade)
+  domain               LearningDomain       @relation(fields: [domainId], references: [id], onDelete: Restrict)
+
+  @@unique([curriculumDefinitionId, domainId])
+  @@index([curriculumDefinitionId])
+  @@index([domainId])
+  @@map("curriculum_definition_domains")
+}
+
+model CurriculumDefinitionCompetency {
+  id                     String   @id @default(uuid()) @db.Uuid
+  curriculumDefinitionId String   @map("curriculum_definition_id") @db.Uuid
+  competencyId           String   @map("competency_id") @db.Uuid
+  required               Boolean  @default(true)
+  order                  Int      @default(0)
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  curriculumDefinition CurriculumDefinition @relation(fields: [curriculumDefinitionId], references: [id], onDelete: Cascade)
+  competency           CompetencyDefinition @relation(fields: [competencyId], references: [id], onDelete: Restrict)
+
+  @@unique([curriculumDefinitionId, competencyId])
+  @@index([curriculumDefinitionId])
+  @@index([competencyId])
+  @@map("curriculum_definition_competencies")
+}
+
+model CurriculumDefinitionRubric {
+  id                     String   @id @default(uuid()) @db.Uuid
+  curriculumDefinitionId String   @map("curriculum_definition_id") @db.Uuid
+  rubricId               String   @map("rubric_id") @db.Uuid
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  curriculumDefinition CurriculumDefinition @relation(fields: [curriculumDefinitionId], references: [id], onDelete: Cascade)
+  rubric               RubricDefinition     @relation(fields: [rubricId], references: [id], onDelete: Restrict)
+
+  @@unique([curriculumDefinitionId, rubricId])
+  @@index([curriculumDefinitionId])
+  @@index([rubricId])
+  @@map("curriculum_definition_rubrics")
 }
 
