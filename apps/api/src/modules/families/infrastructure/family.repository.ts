@@ -82,6 +82,20 @@ export class FamilyRepository {
     return !!member;
   }
 
+  // Every FamilyMember row is some flavor of guardian/educator (see
+  // FamilyRole: OWNER_GUARDIAN, GUARDIAN, CO_GUARDIAN, EDUCATOR — a Learner
+  // is a separate entity, not a FamilyMember), so "does this user have a
+  // FamilyMember row anywhere" is the closest existing proxy this codebase
+  // has to "is this an authorized adult user" — used to gate platform-wide
+  // (non-family-scoped) admin surfaces like curriculum definition CRUD.
+  async isMemberOfAnyFamily(userId: string): Promise<boolean> {
+    const member = await this.prisma.familyMember.findFirst({
+      where: { userId },
+      select: { id: true },
+    });
+    return !!member;
+  }
+
   private mapToEntity(raw: {
     id: string;
     name: string;

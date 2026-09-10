@@ -19,6 +19,16 @@ export const definitionStatusSchema = z.enum([
 
 export type DefinitionStatus = z.infer<typeof definitionStatusSchema>;
 
+// Explicit status transition request -- DRAFT -> PUBLISHED -> DEPRECATED ->
+// ARCHIVED transitions are their own endpoint/call, never an implicit side
+// effect of an update, on every definition table (issue #96 Fase 0 admin
+// CRUD surface).
+export const transitionDefinitionStatusSchema = z.object({
+  status: definitionStatusSchema,
+});
+
+export type TransitionDefinitionStatusDto = z.infer<typeof transitionDefinitionStatusSchema>;
+
 const DEFINITION_CODE_REGEX = /^[A-Z0-9][A-Z0-9_.]*$/;
 
 // Learning Domain
