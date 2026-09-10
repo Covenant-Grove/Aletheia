@@ -9,6 +9,113 @@ export interface TemplateSubjectDefinition {
   starterObjectives: string[];
 }
 
+// Formative areas that apply regardless of which pedagogical framework a
+// family picks -- seeded alongside every framework's own subjects so they're
+// part of the official plan (with objectives and portfolio evidence), not an
+// elective bolt-on.
+const ARTS_TRADES_VOCATION_SUBJECTS: TemplateSubjectDefinition[] = [
+  {
+    name: 'Musicalização e Artes',
+    color: '#DB2777',
+    icon: 'palette',
+    description:
+      'Canto, percepção rítmica, leitura musical, prática instrumental, coral, história da música, desenho, pintura, teatro e fotografia -- incluindo música sacra e congregacional como uma trilha entre várias, não a única.',
+    starterObjectives: [
+      'Desenvolver percepção rítmica e leitura musical básica em um instrumento ou na voz',
+      'Realizar uma apresentação artística ou musical registrada em portfólio',
+    ],
+  },
+  {
+    name: 'Ofícios Práticos',
+    color: '#CA8A04',
+    icon: 'scissors',
+    description:
+      'Marcenaria, culinária, costura, jardinagem, elétrica básica, manutenção residencial e artesanato -- formação para o trabalho, o serviço e a responsabilidade cotidiana.',
+    starterObjectives: [
+      'Concluir um projeto artesanal ou de marcenaria funcional do início ao fim',
+      'Preparar uma refeição completa com segurança alimentar e organização de cozinha',
+    ],
+  },
+  {
+    name: 'Tecnologia e Criação',
+    color: '#2563EB',
+    icon: 'compass',
+    description:
+      'Programação, eletrônica, robótica, impressão 3D, fabricação digital e produção audiovisual -- criar e resolver problemas com ferramentas do nosso tempo.',
+    starterObjectives: [
+      'Construir um projeto simples de programação ou eletrônica funcional',
+      'Produzir um material audiovisual ou digital documentando um processo de aprendizagem',
+    ],
+  },
+  {
+    name: 'Vocação e Serviço',
+    color: '#0D9488',
+    icon: 'hand-heart',
+    description:
+      'Empreendedorismo, projetos comunitários, mentoria profissional e serviço cristão -- vocação como chamado, não apenas escolha de carreira.',
+    starterObjectives: [
+      'Planejar e executar um pequeno projeto empreendedor ou comunitário',
+      'Participar de uma atividade de serviço com reflexão registrada em portfólio',
+    ],
+  },
+];
+
+const FAITH_AND_THEOLOGY_SUBJECTS: TemplateSubjectDefinition[] = [
+  {
+    name: 'Fundamentos da Fé Cristã',
+    color: '#7C3AED',
+    icon: 'hand-heart',
+    description:
+      'Narrativa bíblica, doutrinas centrais, oração, vida da igreja e ética cristã aplicada ao cotidiano -- a base comum antes de qualquer aprofundamento denominacional.',
+    starterObjectives: [
+      'Recontar os grandes marcos da narrativa bíblica em ordem cronológica',
+      'Manter um hábito regular de oração e leitura devocional registrado em diário',
+    ],
+  },
+  {
+    name: 'Estudo das Escrituras',
+    color: '#9333EA',
+    icon: 'book-open',
+    description:
+      'Leitura bíblica contextualizada, panorama do Antigo e Novo Testamento e introdução a como interpretar um texto com responsabilidade -- distinguindo o que o texto diz do que uma tradição específica interpreta.',
+    starterObjectives: [
+      'Elaborar um panorama pessoal dos livros do Antigo e Novo Testamento',
+      'Praticar leitura contextualizada de uma passagem, identificando gênero literário e contexto histórico',
+    ],
+  },
+];
+
+const PRACTICAL_LIFE_AND_RESILIENCE_SUBJECTS: TemplateSubjectDefinition[] = [
+  {
+    name: 'Casa, Culinária e Cultivo',
+    color: '#16A34A',
+    icon: 'sprout',
+    description:
+      'Segurança alimentar, preparo de refeições, panificação, orçamento doméstico e horta caseira -- da cozinha ao cultivo, mordomia prática do lar.',
+    starterObjectives: [
+      'Planejar e preparar um cardápio semanal simples dentro de um orçamento definido',
+      'Manter uma horta doméstica simples do plantio à colheita',
+    ],
+  },
+  {
+    name: 'Primeiros Socorros e Resiliência',
+    color: '#DC2626',
+    icon: 'shield-check',
+    description:
+      'Primeiros socorros, orientação básica ao ar livre e preparo familiar para emergências -- preservar a vida, prevenir riscos e ajudar outras pessoas, sem confronto ou sobrevivencialismo extremo.',
+    starterObjectives: [
+      'Demonstrar procedimentos básicos de primeiros socorros para situações comuns do dia a dia',
+      'Montar, com a família, um plano simples de preparo para emergências domésticas',
+    ],
+  },
+];
+
+const CROSS_CUTTING_SUBJECTS: TemplateSubjectDefinition[] = [
+  ...ARTS_TRADES_VOCATION_SUBJECTS,
+  ...FAITH_AND_THEOLOGY_SUBJECTS,
+  ...PRACTICAL_LIFE_AND_RESILIENCE_SUBJECTS,
+];
+
 @Injectable()
 export class CurriculumTemplateEngine {
   getTemplateDefinitions(framework: PedagogicalFramework): TemplateSubjectDefinition[] {
@@ -76,6 +183,7 @@ export class CurriculumTemplateEngine {
               'Ler e debater fábulas e mitologias formativas',
             ],
           },
+          ...CROSS_CUTTING_SUBJECTS,
         ];
 
       case 'CHARLOTTE_MASON':
@@ -130,6 +238,282 @@ export class CurriculumTemplateEngine {
               'Praticar ordem e zelo na organização dos próprios materiais',
             ],
           },
+          ...CROSS_CUTTING_SUBJECTS,
+        ];
+
+      case 'UNIT_STUDIES':
+        return [
+          {
+            name: 'Estudo Temático Integrado',
+            color: '#7C3AED',
+            icon: 'layers',
+            description: 'Um tema central (ex: oceanos, Idade Média, corpo humano) explorado de forma interdisciplinar ao longo de semanas.',
+            starterObjectives: [
+              'Escolher um tema central e mapear suas conexões com as áreas do conhecimento',
+              'Produzir um projeto final que sintetize o aprendizado sobre o tema',
+            ],
+          },
+          {
+            name: 'Literatura & Redação Contextualizada',
+            color: '#2563EB',
+            icon: 'book-open',
+            description: 'Leitura e escrita sempre ancoradas no tema em estudo, em vez de disciplina isolada.',
+            starterObjectives: [
+              'Ler ao menos uma obra relacionada ao tema central e produzir uma resenha',
+              'Escrever um texto narrativo ou expositivo conectado ao tema em estudo',
+            ],
+          },
+          {
+            name: 'Matemática Aplicada ao Tema',
+            color: '#059669',
+            icon: 'calculator',
+            description: 'Conceitos matemáticos extraídos de situações reais dentro do tema em estudo.',
+            starterObjectives: [
+              'Resolver problemas matemáticos construídos a partir do tema central',
+              'Registrar e interpretar dados numéricos coletados durante o estudo do tema',
+            ],
+          },
+          {
+            name: 'Ciências & Investigação',
+            color: '#0D9488',
+            icon: 'microscope',
+            description: 'Experimentos e observações científicas conectadas diretamente ao tema central.',
+            starterObjectives: [
+              'Conduzir um experimento simples relacionado ao tema em estudo',
+              'Registrar hipóteses, observações e conclusões em um caderno de investigação',
+            ],
+          },
+          {
+            name: 'História & Cultura do Tema',
+            color: '#D97706',
+            icon: 'landmark',
+            description: 'Contexto histórico e cultural do tema central, incluindo sua relação com a história sagrada quando pertinente.',
+            starterObjectives: [
+              'Situar o tema central em sua linha do tempo histórica e cultural',
+              'Apresentar oralmente ou por escrito uma descoberta histórica ligada ao tema',
+            ],
+          },
+          ...CROSS_CUTTING_SUBJECTS,
+        ];
+
+      case 'MONTESSORI':
+        return [
+          {
+            name: 'Vida Prática',
+            color: '#CA8A04',
+            icon: 'scissors',
+            description: 'Cuidado pessoal, cuidado do ambiente e coordenação motora através de tarefas reais e autônomas.',
+            starterObjectives: [
+              'Executar de forma independente uma sequência de cuidado do ambiente (organizar, limpar, cuidar de plantas)',
+              'Demonstrar autonomia crescente em tarefas de cuidado pessoal e do lar',
+            ],
+          },
+          {
+            name: 'Educação Sensorial',
+            color: '#DB2777',
+            icon: 'palette',
+            description: 'Refinamento dos sentidos através de materiais concretos que isolam uma qualidade por vez (cor, forma, textura, peso).',
+            starterObjectives: [
+              'Classificar e ordenar materiais sensoriais por uma qualidade específica (tamanho, cor, textura)',
+              'Descrever verbalmente diferenças sensoriais percebidas em uma atividade prática',
+            ],
+          },
+          {
+            name: 'Linguagem',
+            color: '#2563EB',
+            icon: 'book-open',
+            description: 'Do vocabulário concreto à escrita e leitura, partindo sempre da experiência sensorial e do nome real das coisas.',
+            starterObjectives: [
+              'Expandir vocabulário nomeando objetos e experiências concretas do cotidiano',
+              'Progredir da escrita de letras soltas para palavras e frases simples',
+            ],
+          },
+          {
+            name: 'Matemática Concreta',
+            color: '#059669',
+            icon: 'calculator',
+            description: 'Conceitos matemáticos introduzidos por materiais manipuláveis antes da abstração numérica.',
+            starterObjectives: [
+              'Representar quantidades e operações básicas usando material concreto (contas, barras, fichas)',
+              'Fazer a transição de uma operação concreta para o registro numérico correspondente',
+            ],
+          },
+          {
+            name: 'Ciências Cósmicas & Natureza',
+            color: '#16A34A',
+            icon: 'leaf',
+            description: 'A "Educação Cósmica" montessoriana: o lugar do ser humano no universo, na natureza e na criação, através da observação direta.',
+            starterObjectives: [
+              'Observar e registrar um fenômeno natural ao longo de um período de tempo',
+              'Relacionar uma descoberta científica simples ao seu lugar na criação',
+            ],
+          },
+          ...CROSS_CUTTING_SUBJECTS,
+        ];
+
+      case 'PROJECT_BASED':
+        return [
+          {
+            name: 'Projeto Integrador',
+            color: '#7C3AED',
+            icon: 'lightbulb',
+            description: 'Um projeto real e significativo conduz o aprendizado, do planejamento à entrega final.',
+            starterObjectives: [
+              'Definir um problema real ou pergunta motivadora para o projeto',
+              'Planejar etapas, prazos e critérios de sucesso do projeto',
+            ],
+          },
+          {
+            name: 'Pesquisa & Investigação',
+            color: '#2563EB',
+            icon: 'search',
+            description: 'Habilidades de buscar, avaliar e organizar informação relevante para o projeto em andamento.',
+            starterObjectives: [
+              'Reunir e organizar fontes confiáveis relacionadas ao problema do projeto',
+              'Sintetizar achados de pesquisa em um resumo estruturado',
+            ],
+          },
+          {
+            name: 'Comunicação & Apresentação',
+            color: '#DB2777',
+            icon: 'sparkles',
+            description: 'Comunicar o processo e os resultados do projeto de forma clara, oral e escrita.',
+            starterObjectives: [
+              'Preparar e realizar uma apresentação estruturada do projeto',
+              'Produzir um registro escrito ou visual documentando o processo do projeto',
+            ],
+          },
+          {
+            name: 'Matemática Aplicada',
+            color: '#059669',
+            icon: 'calculator',
+            description: 'Conceitos matemáticos necessários para resolver os desafios concretos do projeto.',
+            starterObjectives: [
+              'Aplicar cálculos ou medidas necessárias para a execução do projeto',
+              'Interpretar dados quantitativos coletados durante o projeto',
+            ],
+          },
+          {
+            name: 'Ciências Aplicadas',
+            color: '#0D9488',
+            icon: 'microscope',
+            description: 'Conceitos científicos investigados na medida em que o projeto os exige.',
+            starterObjectives: [
+              'Identificar e testar um princípio científico relevante para o projeto',
+              'Registrar resultados de testes ou experimentos ligados ao projeto',
+            ],
+          },
+          ...CROSS_CUTTING_SUBJECTS,
+        ];
+
+      case 'GUIDED_UNSCHOOLING':
+        return [
+          {
+            name: 'Interesses Dirigidos pelo Aluno',
+            color: '#DB2777',
+            icon: 'sparkles',
+            description: 'Aprofundamento em áreas de curiosidade genuína do aluno, com mediação e acompanhamento dos pais.',
+            starterObjectives: [
+              'Escolher um interesse pessoal e definir um objetivo de aprofundamento com apoio dos pais',
+              'Registrar em portfólio o progresso e as descobertas sobre o interesse escolhido',
+            ],
+          },
+          {
+            name: 'Leitura Livre & Literatura',
+            color: '#2563EB',
+            icon: 'book-open',
+            description: 'Leitura ampla e autoescolhida, com espaço para conversa e reflexão sobre o que foi lido.',
+            starterObjectives: [
+              'Manter um registro pessoal das leituras realizadas no período',
+              'Compartilhar oralmente ou por escrito reflexões sobre uma leitura significativa',
+            ],
+          },
+          {
+            name: 'Matemática Funcional',
+            color: '#059669',
+            icon: 'calculator',
+            description: 'Matemática enraizada em situações reais e nos interesses do aluno, não em uma sequência fixa de exercícios.',
+            starterObjectives: [
+              'Resolver um problema matemático real surgido de um interesse ou atividade pessoal',
+              'Demonstrar fluência crescente em operações básicas através de uso prático',
+            ],
+          },
+          {
+            name: 'Exploração Científica',
+            color: '#0D9488',
+            icon: 'microscope',
+            description: 'Curiosidade científica guiada por perguntas do próprio aluno, com experimentação livre e mediada.',
+            starterObjectives: [
+              'Formular uma pergunta científica própria e investigá-la de forma simples',
+              'Registrar uma observação ou experimento motivado por curiosidade pessoal',
+            ],
+          },
+          {
+            name: 'Habilidades para a Vida',
+            color: '#CA8A04',
+            icon: 'scissors',
+            description: 'Competências práticas do cotidiano aprendidas por necessidade e interesse real.',
+            starterObjectives: [
+              'Aprender uma habilidade prática nova a partir de uma necessidade real identificada',
+              'Demonstrar autonomia crescente em uma tarefa do cotidiano familiar',
+            ],
+          },
+          ...CROSS_CUTTING_SUBJECTS,
+        ];
+
+      case 'ECLECTIC':
+        return [
+          {
+            name: 'Língua Portuguesa',
+            color: '#2563EB',
+            icon: 'book-open',
+            description: 'Leitura, escrita e gramática combinando métodos conforme o que melhor funciona para o aluno.',
+            starterObjectives: [
+              'Desenvolver leitura fluente e interpretação de textos de complexidade adequada',
+              'Produzir textos escritos com estrutura clara, usando o método mais eficaz para o aluno',
+            ],
+          },
+          {
+            name: 'Matemática',
+            color: '#059669',
+            icon: 'calculator',
+            description: 'Combinação livre de abordagens concretas, lógicas e aplicadas, ajustada ao ritmo do aluno.',
+            starterObjectives: [
+              'Executar operações aritméticas básicas com exatidão',
+              'Resolver problemas aplicados escolhendo a abordagem mais adequada ao conceito',
+            ],
+          },
+          {
+            name: 'Estudo Temático Flexível',
+            color: '#7C3AED',
+            icon: 'layers',
+            description: 'Temas de história, geografia e cultura explorados de forma livre, misturando unit studies, livros vivos e material tradicional.',
+            starterObjectives: [
+              'Explorar um tema histórico ou geográfico combinando ao menos duas fontes de metodologia diferentes',
+              'Produzir um registro do tema estudado no formato mais adequado ao aluno (texto, projeto ou apresentação)',
+            ],
+          },
+          {
+            name: 'Ciências & Natureza',
+            color: '#0D9488',
+            icon: 'microscope',
+            description: 'Observação da natureza, experimentos e leitura científica combinados conforme o interesse e o momento.',
+            starterObjectives: [
+              'Realizar uma observação de natureza ou experimento científico simples',
+              'Registrar uma descoberta científica no formato que melhor comunique o aprendizado',
+            ],
+          },
+          {
+            name: 'Artes & Expressão',
+            color: '#DB2777',
+            icon: 'palette',
+            description: 'Desenho, pintura, música e expressão criativa livre, sem amarrar-se a um único método.',
+            starterObjectives: [
+              'Concluir uma produção artística livre no meio de preferência do aluno',
+              'Apreciar e comentar uma obra de arte ou peça musical à escolha',
+            ],
+          },
+          ...CROSS_CUTTING_SUBJECTS,
         ];
 
       case 'TRADITIONAL':
@@ -185,6 +569,7 @@ export class CurriculumTemplateEngine {
               'Compreender o ciclo da água, estados físicos da matéria e cadeias alimentares',
             ],
           },
+          ...CROSS_CUTTING_SUBJECTS,
         ];
     }
   }

@@ -110,4 +110,18 @@ describe('CurriculumService', () => {
       expect.objectContaining({ pedagogicalFramework: 'CLASSICAL_TRIVIUM' }),
     );
   });
+
+  it('applies a newly added pedagogical framework template', async () => {
+    const res = await service.applyTemplate(FAMILY_ID, {
+      learnerId: LEARNER_ID,
+      academicYearId: YEAR_ID,
+      template: 'MONTESSORI',
+    });
+    expect(res.subjectsCount).toBeGreaterThan(0);
+    expect(res.objectivesCount).toBeGreaterThan(0);
+    expect(curriculumRepo.upsertLearnerPlan).toHaveBeenCalledWith(
+      FAMILY_ID,
+      expect.objectContaining({ pedagogicalFramework: 'MONTESSORI' }),
+    );
+  });
 });
