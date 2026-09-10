@@ -876,5 +876,78 @@ model DataExportJob {
   @@map("data_export_jobs")
 }
 
+// --- Data-driven curriculum foundation (Aletheia issue #96, Fase 0) ---
+//
+// Generic Definition/Version pattern: platform-level content (learning
+// domains, competencies, pedagogical models, and -- later -- theological
+// perspectives, activities, rubrics, curriculum packs) is modeled as
+// versioned data rows instead of enums/switch-cases baked into application
+// code. Every definition table shares the same identity/versioning shape
+// (code, version, status, schema_version, created_at, published_at,
+// deprecated_at) plus a `metadata` JSONB column for extensible, non-critical
+// properties. Relational columns are used for identity/relationship/
+// versioning; JSONB is only for extensible properties -- never a single
+// untyped blob.
+//
+// This coexists with the pre-existing `PedagogicalFramework` enum and the
+// hardcoded switch-case in CurriculumTemplateEngine (strangler-fig). Neither
+// is removed in this phase; that cutover is a separate, human-approved PR.
+enum DefinitionStatus {
+  DRAFT
+  PUBLISHED
+  DEPRECATED
+  ARCHIVED
+
+  @@map("definition_statuses")
+}
+
+model LearningDomain {
+  id            String                 @id @default(uuid()) @db.Uuid
+  code          String
+  version       Int                    @default(1)
+  status        DefinitionStatus       @default(DRAFT)
+  schemaVersion String                 @default("1.0.0") @map("schema_version")
+  name          String
+  description   String?
+  parentId      String?                @map("parent_id") @db.Uuid
+  metadata      Json                   @default("{}")
+  createdAt     DateTime               @default(now()) @map("created_at") @db.Timestamptz
+  publishedAt   DateTime?              @map("published_at") @db.Timestamptz
+  deprecatedAt  DateTime?              @map("deprecated_at") @db.Timestamptz
+
+  parent        LearningDomain?        @relation("LearningDomainHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children      LearningDomain[]       @relation("LearningDomainHierarchy")
+  competencies  CompetencyDefinition[]
+
+  @@unique([code, version])
+  @@index([code])
+  @@index([parentId])
+  @@index([status])
+  @@map("learning_domains")
+}
+
+model CompetencyDefinition {
+  id            String           @id @default(uuid()) @db.Uuid
+  code          String
+  version       Int              @default(1)
+  status        DefinitionStatus @default(DRAFT)
+  schemaVersion String           @default("1.0.0") @map("schema_version")
+  domainId      String           @map("domain_id") @db.Uuid
+  title         String
+  level         Int?
+  metadata      Json             @default("{}")
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  publishedAt   DateTime?        @map("published_at") @db.Timestamptz
+  deprecatedAt  DateTime?        @map("deprecated_at") @db.Timestamptz
+
+  domain        LearningDomain   @relation(fields: [domainId], references: [id], onDelete: Restrict)
+
+  @@unique([code, version])
+  @@index([code])
+  @@index([domainId])
+  @@index([status])
+  @@map("competency_definitions")
+}
+
 
 

@@ -5,6 +5,7 @@ export * from './learner.js';
 export * from './devotional.js';
 export * from './prayer.js';
 export * from './curriculum.js';
+export * from './curriculum-definitions.js';
 export * from './lesson.js';
 export * from './schedule.js';
 export * from './record.js';
