@@ -21,6 +21,7 @@ import type {
   UserSummaryDto,
 } from '@aletheia/contracts';
 import { useOptionalAuth } from '../../lib/auth/auth-context';
+import { useLocale } from '../../lib/i18n/locale-context';
 import {
   AuthProvider as AuthRoleProvider,
   getPermissions,
@@ -37,17 +38,20 @@ export { NotificationBell } from './notification-bell';
 
 export type NavItem = NavigationItem;
 
+// `label` holds an i18n dictionary key, not display text -- translated at
+// render time inside ProductShell (module-level constants can't call the
+// useLocale() hook).
 export const MAIN_NAV_ITEMS: NavigationItem[] = [
-  { id: 'home', label: 'Início', href: '/', icon: <AletheiaIcon name="home" size={18} /> },
-  { id: 'learners', label: 'Educandos', href: '/learners', icon: <AletheiaIcon name="users" size={18} /> },
-  { id: 'devotional', label: 'Devocional', href: '/devotional', icon: <AletheiaIcon name="book-open" size={18} /> },
-  { id: 'curriculum', label: 'Currículo', href: '/curriculum', icon: <AletheiaIcon name="library" size={18} /> },
-  { id: 'schedule', label: 'Agenda & Rotina', href: '/schedule', icon: <AletheiaIcon name="calendar-days" size={18} /> },
-  { id: 'records', label: 'Diário de Aprendizagem', href: '/records', icon: <AletheiaIcon name="pen-line" size={18} /> },
-  { id: 'portfolio', label: 'Portfólio', href: '/portfolio', icon: <AletheiaIcon name="folder-heart" size={18} /> },
-  { id: 'attendance', label: 'Frequência', href: '/attendance', icon: <AletheiaIcon name="clipboard-check" size={18} /> },
-  { id: 'reports', label: 'Relatórios', href: '/reports', icon: <AletheiaIcon name="bar-chart-3" size={18} /> },
-  { id: 'settings', label: 'Configurações', href: '/settings', icon: <AletheiaIcon name="settings" size={18} /> },
+  { id: 'home', label: 'nav.home', href: '/', icon: <AletheiaIcon name="home" size={18} /> },
+  { id: 'learners', label: 'nav.learners', href: '/learners', icon: <AletheiaIcon name="users" size={18} /> },
+  { id: 'devotional', label: 'nav.devotional', href: '/devotional', icon: <AletheiaIcon name="book-open" size={18} /> },
+  { id: 'curriculum', label: 'nav.curriculum', href: '/curriculum', icon: <AletheiaIcon name="library" size={18} /> },
+  { id: 'schedule', label: 'nav.schedule', href: '/schedule', icon: <AletheiaIcon name="calendar-days" size={18} /> },
+  { id: 'records', label: 'nav.records', href: '/records', icon: <AletheiaIcon name="pen-line" size={18} /> },
+  { id: 'portfolio', label: 'nav.portfolio', href: '/portfolio', icon: <AletheiaIcon name="folder-heart" size={18} /> },
+  { id: 'attendance', label: 'nav.attendance', href: '/attendance', icon: <AletheiaIcon name="clipboard-check" size={18} /> },
+  { id: 'reports', label: 'nav.reports', href: '/reports', icon: <AletheiaIcon name="bar-chart-3" size={18} /> },
+  { id: 'settings', label: 'nav.settings', href: '/settings', icon: <AletheiaIcon name="settings" size={18} /> },
 ];
 
 const PRIMARY_NAV_ITEM_IDS: ReadonlyArray<NavigationItem['id']> = [
@@ -113,6 +117,7 @@ export function ProductShell({
   const router = useRouter();
   const authContext = useOptionalAuth();
   const existingRbac = useAuthRole();
+  const { t } = useLocale();
   const activePath = currentPath ?? pathname;
 
   // Derive active family id up front (moved ahead of the early returns
@@ -242,6 +247,7 @@ export function ProductShell({
     })
     .map<NavigationItem>((item) => ({
       ...item,
+      label: t(item.label),
       active: activePath === item.href,
     }));
 
@@ -253,8 +259,8 @@ export function ProductShell({
   const breadcrumbItems: BreadcrumbItem[] =
     activeNavItem && activeNavItem.id !== 'home'
       ? [
-          { id: 'home', label: 'Início', href: '/' },
-          { id: activeNavItem.id, label: activeNavItem.label },
+          { id: 'home', label: t('common.home'), href: '/' },
+          { id: activeNavItem.id, label: t(activeNavItem.label) },
         ]
       : [];
 
@@ -290,7 +296,7 @@ export function ProductShell({
           )}
           {authContext?.logout && (
             <IconButton
-              aria-label="Sair"
+              aria-label={t('common.logout')}
               size="sm"
               className="product-shell-logout-button"
               onClick={() => authContext.logout()}
@@ -319,8 +325,8 @@ export function ProductShell({
       {accessDenied ? (
         <div data-testid="access-denied-state">
           <EmptyState
-            title="Acesso restrito"
-            description="Você não tem permissão para acessar esta página."
+            title={t('common.accessDeniedTitle')}
+            description={t('common.accessDeniedDescription')}
           />
         </div>
       ) : (

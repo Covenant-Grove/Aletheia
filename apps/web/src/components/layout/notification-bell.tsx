@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AletheiaIcon } from '@aletheia/ui';
 import type { NotificationItemResponseDto, NotificationType } from '@aletheia/contracts';
+import { useLocale, type LocaleContextValue } from '../../lib/i18n/locale-context';
 
 export interface NotificationBellProps {
   notifications: NotificationItemResponseDto[];
@@ -11,24 +12,32 @@ export interface NotificationBellProps {
   onMarkAllAsRead?: (() => Promise<void>) | undefined;
 }
 
-const TYPE_ICONS_AND_LABELS: Record<NotificationType, { icon: React.ReactNode; label: string }> = {
-  DEVOTIONAL_REMINDER: { icon: <AletheiaIcon name="book-open" size={16} style={{ color: 'var(--color-amber-600)' }} />, label: 'Devocional' },
-  DAILY_SCHEDULE_REMINDER: { icon: <AletheiaIcon name="clock" size={16} style={{ color: 'var(--color-indigo-600)' }} />, label: 'Cronograma' },
-  ATTENDANCE_MISSING_REMINDER: { icon: <AletheiaIcon name="clipboard-check" size={16} style={{ color: 'var(--color-emerald-600)' }} />, label: 'Frequência' },
-  PRAYER_ANSWERED_ALERT: { icon: <AletheiaIcon name="heart" size={16} style={{ color: 'var(--color-rose-600)' }} />, label: 'Oração Respondida' },
-  SYSTEM_NOTICE: { icon: <AletheiaIcon name="bell" size={16} style={{ color: 'var(--color-indigo-600)' }} />, label: 'Aviso do Sistema' },
+const TYPE_ICONS: Record<NotificationType, React.ReactNode> = {
+  DEVOTIONAL_REMINDER: <AletheiaIcon name="book-open" size={16} style={{ color: 'var(--color-amber-600)' }} />,
+  DAILY_SCHEDULE_REMINDER: <AletheiaIcon name="clock" size={16} style={{ color: 'var(--color-indigo-600)' }} />,
+  ATTENDANCE_MISSING_REMINDER: <AletheiaIcon name="clipboard-check" size={16} style={{ color: 'var(--color-emerald-600)' }} />,
+  PRAYER_ANSWERED_ALERT: <AletheiaIcon name="heart" size={16} style={{ color: 'var(--color-rose-600)' }} />,
+  SYSTEM_NOTICE: <AletheiaIcon name="bell" size={16} style={{ color: 'var(--color-indigo-600)' }} />,
 };
 
-function formatTimestamp(dateStr?: string | Date): string {
+const TYPE_LABEL_KEYS: Record<NotificationType, string> = {
+  DEVOTIONAL_REMINDER: 'notifications.typeDevotionalReminder',
+  DAILY_SCHEDULE_REMINDER: 'notifications.typeDailyScheduleReminder',
+  ATTENDANCE_MISSING_REMINDER: 'notifications.typeAttendanceMissingReminder',
+  PRAYER_ANSWERED_ALERT: 'notifications.typePrayerAnsweredAlert',
+  SYSTEM_NOTICE: 'notifications.typeSystemNotice',
+};
+
+function formatTimestamp(dateStr: string | Date | undefined, t: LocaleContextValue['t']): string {
   if (!dateStr) return '';
   const date = new Date(dateStr);
   const now = new Date();
   const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
 
-  if (diffInMinutes < 1) return 'Agora';
-  if (diffInMinutes < 60) return `${diffInMinutes}m atrás`;
+  if (diffInMinutes < 1) return t('notifications.timeJustNow');
+  if (diffInMinutes < 60) return t('notifications.timeMinutesAgo', { count: diffInMinutes });
   const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours}h atrás`;
+  if (diffInHours < 24) return t('notifications.timeHoursAgo', { count: diffInHours });
   return date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
 }
 
@@ -41,6 +50,7 @@ export function NotificationBell({
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { t } = useLocale();
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -90,7 +100,7 @@ export function NotificationBell({
       <button
         type="button"
         data-testid="notification-bell-btn"
-        aria-label={`Notificações (${unreadCount} não lidas)`}
+        aria-label={t('notifications.bellAriaLabel', { count: unreadCount })}
         aria-expanded={isOpen}
         onClick={handleToggle}
         style={{
@@ -110,7 +120,7 @@ export function NotificationBell({
           boxShadow: 'var(--shadow-sm)',
         }}
       >
-        <span aria-label="Sino" style={{ display: 'inline-flex', alignItems: 'center' }}>
+        <span aria-label={t('notifications.iconAriaLabel')} style={{ display: 'inline-flex', alignItems: 'center' }}>
           <AletheiaIcon name="bell" size={18} />
         </span>
         {unreadCount > 0 && (
@@ -170,7 +180,7 @@ export function NotificationBell({
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
-                Notificações
+                {t('notifications.title')}
               </span>
               {unreadCount > 0 && (
                 <span
@@ -183,7 +193,7 @@ export function NotificationBell({
                     borderRadius: 'var(--radius-full)',
                   }}
                 >
-                  {unreadCount} novas
+                  {t('notifications.newCount', { count: unreadCount })}
                 </span>
               )}
             </div>
@@ -204,7 +214,7 @@ export function NotificationBell({
                   padding: 0,
                 }}
               >
-                Marcar lidas
+                {t('notifications.markAllRead')}
               </button>
             )}
           </div>
@@ -223,14 +233,14 @@ export function NotificationBell({
                 <div style={{ color: 'var(--sage)', marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>
                   <AletheiaIcon name="sparkles" size={28} />
                 </div>
-                Nenhuma notificação no momento.
+                {t('notifications.empty')}
               </div>
             ) : (
               notifications.map((item) => {
-                const meta = TYPE_ICONS_AND_LABELS[item.type] || {
-                  icon: <AletheiaIcon name="bell" size={16} />,
-                  label: 'Notificação',
-                };
+                const icon = TYPE_ICONS[item.type] ?? <AletheiaIcon name="bell" size={16} />;
+                const label = TYPE_LABEL_KEYS[item.type]
+                  ? t(TYPE_LABEL_KEYS[item.type])
+                  : t('notifications.typeFallback');
                 return (
                   <div
                     key={item.id}
@@ -246,7 +256,7 @@ export function NotificationBell({
                     }}
                   >
                     <span style={{ fontSize: '1.25rem', lineHeight: 1, marginTop: '0.125rem' }}>
-                      {meta.icon}
+                      {icon}
                     </span>
 
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -278,7 +288,7 @@ export function NotificationBell({
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          {formatTimestamp(item.createdAt)}
+                          {formatTimestamp(item.createdAt, t)}
                         </span>
                       </div>
 
@@ -311,7 +321,7 @@ export function NotificationBell({
                             fontWeight: 500,
                           }}
                         >
-                          {meta.label}
+                          {label}
                         </span>
 
                         {!item.isRead && (
@@ -330,7 +340,7 @@ export function NotificationBell({
                               padding: '0.125rem 0.25rem',
                             }}
                           >
-                            Marcar como lida
+                            {t('notifications.markAsRead')}
                           </button>
                         )}
                       </div>
