@@ -950,6 +950,7 @@ model CompetencyDefinition {
   domain        LearningDomain   @relation(fields: [domainId], references: [id], onDelete: Restrict)
   path          LearningPath?    @relation(fields: [pathId], references: [id], onDelete: SetNull)
   skills        SkillDefinition[]
+  rubrics       RubricDefinition[]
 
   @@unique([code, version])
   @@index([code])
@@ -1011,6 +1012,59 @@ model SkillDefinition {
   @@index([competencyId])
   @@index([status])
   @@map("skill_definitions")
+}
+
+// Rubric definition (issue #96 section 10). Optionally scoped to one
+// competency (nullable FK -- a rubric can also be reusable across several,
+// referenced generically rather than owned by exactly one). Criteria are a
+// real child table, not JSON, so weights and scales are queryable/
+// joinable per section 30's JSONB-discipline rule; `metadata` carries the
+// extensible, non-load-bearing bits (which assessment modes apply --
+// binary/quantitative/qualitative/self/parent/mentor/competency-based --
+// as free-form strings, not a closed enum, so a new mode is a data value,
+// not a migration).
+model RubricDefinition {
+  id            String                @id @default(uuid()) @db.Uuid
+  code          String
+  version       Int                   @default(1)
+  status        DefinitionStatus      @default(DRAFT)
+  schemaVersion String                @default("1.0.0") @map("schema_version")
+  competencyId  String?               @map("competency_id") @db.Uuid
+  name          String
+  description   String?
+  metadata      Json                  @default("{}")
+  createdAt     DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  publishedAt   DateTime?             @map("published_at") @db.Timestamptz
+  deprecatedAt  DateTime?             @map("deprecated_at") @db.Timestamptz
+
+  competency    CompetencyDefinition? @relation(fields: [competencyId], references: [id], onDelete: SetNull)
+  criteria      RubricCriterion[]
+
+  @@unique([code, version])
+  @@index([code])
+  @@index([competencyId])
+  @@index([status])
+  @@map("rubric_definitions")
+}
+
+model RubricCriterion {
+  id          String           @id @default(uuid()) @db.Uuid
+  rubricId    String           @map("rubric_id") @db.Uuid
+  code        String
+  label       String
+  weight      Float            @default(1)
+  order       Int              @default(0)
+  scaleMin    Int              @default(0) @map("scale_min")
+  scaleMax    Int              @default(4) @map("scale_max")
+  metadata    Json             @default("{}")
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  rubric      RubricDefinition @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+
+  @@unique([rubricId, code])
+  @@index([rubricId])
+  @@map("rubric_criteria")
 }
 
 // Pedagogical model definition (framework), same Definition/Version shape.
