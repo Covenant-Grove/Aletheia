@@ -3,6 +3,8 @@ import { DatabaseModule } from '../../platform/database/database.module.js';
 import { CurriculumRepository } from './infrastructure/curriculum.repository.js';
 import { ObjectiveRepository } from './infrastructure/objective.repository.js';
 import { CurriculumTemplateEngine } from './infrastructure/curriculum-template.engine.js';
+import { PedagogicalModelDefinitionResolver } from './infrastructure/pedagogical-model-definition.resolver.js';
+import { PedagogicalModelDefinitionSeeder } from './infrastructure/pedagogical-model-definition.seeder.js';
 import { CurriculumService } from './application/curriculum.service.js';
 import { ObjectiveService } from './application/objective.service.js';
 import { CURRICULUM_PUBLIC_API } from './application/public-api.js';
@@ -16,6 +18,8 @@ import { ObjectiveController } from './presentation/objective.controller.js';
     CurriculumRepository,
     ObjectiveRepository,
     CurriculumTemplateEngine,
+    PedagogicalModelDefinitionResolver,
+    PedagogicalModelDefinitionSeeder,
     CurriculumService,
     ObjectiveService,
     {

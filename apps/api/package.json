@@ -8,6 +8,7 @@
     "dev": "nest start --watch",
     "start": "node dist/main.js",
     "retention:purge-portfolio": "node dist/scripts/purge-expired-portfolio-items.js",
+    "seed:pedagogical-models": "node dist/scripts/seed-pedagogical-model-definitions.js",
     "lint": "eslint . --config ../../packages/eslint-config/index.mjs --ignore-pattern dist --global require --global module",
     "prisma": "prisma",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",

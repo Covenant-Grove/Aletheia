@@ -949,5 +949,31 @@ model CompetencyDefinition {
   @@map("competency_definitions")
 }
 
+// Pedagogical model definition (framework), same Definition/Version shape.
+// `metadata.subjects` holds an array shaped like the pre-existing
+// TemplateSubjectDefinition (name, color, icon, description,
+// starterObjectives) -- seeded from the content already written in
+// CurriculumTemplateEngine so nothing is rewritten from scratch. Each row
+// includes both the framework's own subjects and the shared cross-cutting
+// ones (Artes/Ofícios/Vocação, Fé e Teologia, Vida Prática), exactly
+// mirroring what the old switch-case returns for that framework.
+model PedagogicalModelDefinition {
+  id            String           @id @default(uuid()) @db.Uuid
+  code          String
+  version       Int              @default(1)
+  status        DefinitionStatus @default(DRAFT)
+  schemaVersion String           @default("1.0.0") @map("schema_version")
+  name          String
+  description   String?
+  metadata      Json             @default("{}")
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  publishedAt   DateTime?        @map("published_at") @db.Timestamptz
+  deprecatedAt  DateTime?        @map("deprecated_at") @db.Timestamptz
+
+  @@unique([code, version])
+  @@index([code])
+  @@index([status])
+  @@map("pedagogical_model_definitions")
+}
 
 
