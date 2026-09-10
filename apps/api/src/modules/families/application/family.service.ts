@@ -46,6 +46,10 @@ export class FamilyService implements FamilyPublicApi {
     return this.familyRepository.isMember(userId, familyId);
   }
 
+  async isGuardianAnywhere(userId: string): Promise<boolean> {
+    return this.familyRepository.isMemberOfAnyFamily(userId);
+  }
+
   async getFamilyForUser(userId: string, familyId: string): Promise<FamilyResponseDto | null> {
     const isMember = await this.familyRepository.isMember(userId, familyId);
     if (!isMember) return null;

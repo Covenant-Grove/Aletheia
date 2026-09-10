@@ -102,6 +102,7 @@ describe('DashboardService', () => {
       isGuardianInFamily: jest.fn().mockResolvedValue(true),
       getFamilyForUser: jest.fn().mockResolvedValue(family),
       getFamilyMemberUserIds: jest.fn().mockResolvedValue([]),
+      isGuardianAnywhere: jest.fn().mockResolvedValue(true),
     };
     learnersApi = {
       findLearnerById: jest.fn().mockResolvedValue(learners[0] ?? null),

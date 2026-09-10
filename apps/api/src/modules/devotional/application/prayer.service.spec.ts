@@ -90,6 +90,7 @@ describe('PrayerService', () => {
       isGuardianInFamily: jest.fn().mockResolvedValue(true),
       getFamilyForUser: jest.fn().mockResolvedValue(null),
       getFamilyMemberUserIds: jest.fn().mockResolvedValue(['user-1', 'user-2']),
+      isGuardianAnywhere: jest.fn().mockResolvedValue(true),
     };
     settingsApi = {
       getSettings: jest.fn(),
