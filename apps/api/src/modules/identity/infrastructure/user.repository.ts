@@ -18,6 +18,7 @@ export class UserRepository {
       fullName: user.fullName,
       emailVerifiedAt: user.emailVerifiedAt,
       mfaEnabled: user.mfaEnabled,
+      isPlatformAdmin: user.isPlatformAdmin,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     });
@@ -35,6 +36,7 @@ export class UserRepository {
       fullName: user.fullName,
       emailVerifiedAt: user.emailVerifiedAt,
       mfaEnabled: user.mfaEnabled,
+      isPlatformAdmin: user.isPlatformAdmin,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     });
@@ -55,6 +57,7 @@ export class UserRepository {
       fullName: created.fullName,
       emailVerifiedAt: created.emailVerifiedAt,
       mfaEnabled: created.mfaEnabled,
+      isPlatformAdmin: created.isPlatformAdmin,
       createdAt: created.createdAt,
       updatedAt: created.updatedAt,
     });
@@ -80,6 +83,16 @@ export class UserRepository {
     await this.prisma.user.update({
       where: { id },
       data: { email, emailVerifiedAt: null },
+    });
+  }
+
+  // Platform-admin bootstrap (issue #101): only ever promotes, never
+  // demotes. Called by AuthService when a user's email matches
+  // PLATFORM_ADMIN_EMAILS and they aren't already flagged.
+  async grantPlatformAdmin(id: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id },
+      data: { isPlatformAdmin: true },
     });
   }
 }

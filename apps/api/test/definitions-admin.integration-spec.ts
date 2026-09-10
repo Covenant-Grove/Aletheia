@@ -5,12 +5,15 @@ import { createApplication } from '../src/main.js';
 // Admin CRUD surface for the data-driven curriculum foundation (issue #96
 // Fase 0, section 40's literal test: adding a new domain/competency/track
 // should be a data write through an API, not a code change + deploy).
-// Exercises the full HTTP path (auth, GuardianOnlyGuard, Zod validation,
-// Prisma persistence, status transitions) against real Postgres.
+// Exercises the full HTTP path (auth, PlatformAdminGuard, Zod validation,
+// Prisma persistence, status transitions) against real Postgres. Also
+// exercises the PLATFORM_ADMIN_EMAILS bootstrap path end-to-end (issue
+// #101) rather than poking the database directly to create an admin.
 describe('Curriculum definitions admin API (real Postgres)', () => {
   let app: NestFastifyApplication;
-  let guardianCookie: string;
+  let adminCookie: string;
   let outsiderCookie: string;
+  const adminEmail = `definitions-admin-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
 
   async function registerAndGetCookie(emailPrefix: string): Promise<string> {
     const email = `${emailPrefix}-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
@@ -22,25 +25,41 @@ describe('Curriculum definitions admin API (real Postgres)', () => {
   }
 
   beforeAll(async () => {
+    // Set before createApplication() so the bootstrap list is picked up by
+    // the running process's parsed Environment.
+    process.env.PLATFORM_ADMIN_EMAILS = adminEmail;
+
     app = await createApplication();
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
 
-    guardianCookie = await registerAndGetCookie('definitions-guardian');
-    // A guardian is any user who is a FamilyMember of some family.
+    // Registering with an email on PLATFORM_ADMIN_EMAILS auto-promotes —
+    // this is the real bootstrap path, not a test-only shortcut.
+    const adminResponse = await supertest(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({ email: adminEmail, password: 'somePassword123', fullName: 'Definitions Admin Test' })
+      .expect(201);
+    adminCookie = [adminResponse.headers['set-cookie']]
+      .flat()
+      .find((c) => c?.startsWith('aletheia_session='))!;
+
+    // An authenticated user NOT on the bootstrap list -- should be
+    // rejected by PlatformAdminGuard even though they're logged in, and
+    // even if they're a guardian of a family (family membership is no
+    // longer a proxy for platform-admin access, per issue #101).
+    outsiderCookie = await registerAndGetCookie('definitions-outsider');
     await supertest(app.getHttpServer())
       .post('/api/v1/families')
-      .set('Cookie', guardianCookie)
-      .send({ name: 'Definitions Test Family', countryCode: 'BR' })
+      .set('Cookie', outsiderCookie)
+      .send({ name: 'Outsider Family', countryCode: 'BR' })
       .expect(201);
-
-    // An authenticated user who never created/joined a family -- should be
-    // rejected by GuardianOnlyGuard even though they're logged in.
-    outsiderCookie = await registerAndGetCookie('definitions-outsider');
   });
 
   afterAll(async () => {
     await app.close();
+    // jest-integration.json runs every *.integration-spec.ts in one
+    // process (--runInBand) -- don't leak this into files that run after.
+    delete process.env.PLATFORM_ADMIN_EMAILS;
   });
 
   it('rejects an unauthenticated request', async () => {
@@ -49,7 +68,7 @@ describe('Curriculum definitions admin API (real Postgres)', () => {
       .expect(401);
   });
 
-  it('rejects an authenticated user who is not a guardian of any family', async () => {
+  it('rejects an authenticated non-admin user, even one who is a guardian of a family', async () => {
     await supertest(app.getHttpServer())
       .get('/api/v1/admin/curriculum-definitions/learning-domains')
       .set('Cookie', outsiderCookie)
@@ -61,7 +80,7 @@ describe('Curriculum definitions admin API (real Postgres)', () => {
 
     const createResponse = await supertest(app.getHttpServer())
       .post('/api/v1/admin/curriculum-definitions/learning-domains')
-      .set('Cookie', guardianCookie)
+      .set('Cookie', adminCookie)
       .send({ code, name: 'Test Domain' })
       .expect(201);
 
@@ -70,13 +89,13 @@ describe('Curriculum definitions admin API (real Postgres)', () => {
 
     const listResponse = await supertest(app.getHttpServer())
       .get('/api/v1/admin/curriculum-definitions/learning-domains')
-      .set('Cookie', guardianCookie)
+      .set('Cookie', adminCookie)
       .expect(200);
     expect(listResponse.body.some((d: { id: string }) => d.id === domainId)).toBe(true);
 
     const publishResponse = await supertest(app.getHttpServer())
       .patch(`/api/v1/admin/curriculum-definitions/learning-domains/${domainId}/status`)
-      .set('Cookie', guardianCookie)
+      .set('Cookie', adminCookie)
       .send({ status: 'PUBLISHED' })
       .expect(200);
     expect(publishResponse.body.status).toBe('PUBLISHED');
@@ -85,7 +104,7 @@ describe('Curriculum definitions admin API (real Postgres)', () => {
     // Explicit transitions only -- can't skip PUBLISHED -> DRAFT.
     await supertest(app.getHttpServer())
       .patch(`/api/v1/admin/curriculum-definitions/learning-domains/${domainId}/status`)
-      .set('Cookie', guardianCookie)
+      .set('Cookie', adminCookie)
       .send({ status: 'DRAFT' })
       .expect(400);
 
@@ -96,21 +115,21 @@ describe('Curriculum definitions admin API (real Postgres)', () => {
     const domainCode = `TEST.SKILL_TREE.DOMAIN.${Date.now()}`;
     const domain = await supertest(app.getHttpServer())
       .post('/api/v1/admin/curriculum-definitions/learning-domains')
-      .set('Cookie', guardianCookie)
+      .set('Cookie', adminCookie)
       .send({ code: domainCode, name: 'Skill Tree Domain' })
       .expect(201);
 
     const pathCode = `TEST.SKILL_TREE.PATH.${Date.now()}`;
     const path = await supertest(app.getHttpServer())
       .post('/api/v1/admin/curriculum-definitions/learning-paths')
-      .set('Cookie', guardianCookie)
+      .set('Cookie', adminCookie)
       .send({ code: pathCode, domainId: domain.body.id, name: 'Skill Tree Path' })
       .expect(201);
 
     const competencyCode = `TEST.SKILL_TREE.COMPETENCY.${Date.now()}`;
     const competency = await supertest(app.getHttpServer())
       .post('/api/v1/admin/curriculum-definitions/competency-definitions')
-      .set('Cookie', guardianCookie)
+      .set('Cookie', adminCookie)
       .send({
         code: competencyCode,
         domainId: domain.body.id,
@@ -123,14 +142,14 @@ describe('Curriculum definitions admin API (real Postgres)', () => {
     const skillCode = `TEST.SKILL_TREE.SKILL.${Date.now()}`;
     const skill = await supertest(app.getHttpServer())
       .post('/api/v1/admin/curriculum-definitions/skill-definitions')
-      .set('Cookie', guardianCookie)
+      .set('Cookie', adminCookie)
       .send({ code: skillCode, competencyId: competency.body.id, title: 'Skill Tree Skill' })
       .expect(201);
     expect(skill.body.competencyId).toBe(competency.body.id);
 
     const listResponse = await supertest(app.getHttpServer())
       .get('/api/v1/admin/curriculum-definitions/skill-definitions')
-      .set('Cookie', guardianCookie)
+      .set('Cookie', adminCookie)
       .expect(200);
     expect(listResponse.body.some((s: { id: string }) => s.id === skill.body.id)).toBe(true);
   });
@@ -138,7 +157,7 @@ describe('Curriculum definitions admin API (real Postgres)', () => {
   it('rejects a malformed create payload with 400', async () => {
     await supertest(app.getHttpServer())
       .post('/api/v1/admin/curriculum-definitions/learning-domains')
-      .set('Cookie', guardianCookie)
+      .set('Cookie', adminCookie)
       .send({ code: 'lowercase-not-allowed', name: 'x' })
       .expect(400);
   });

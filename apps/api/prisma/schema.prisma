@@ -14,6 +14,11 @@ model User {
   fullName                String                    @map("full_name")
   emailVerifiedAt         DateTime?                 @map("email_verified_at") @db.Timestamptz
   mfaEnabled              Boolean                   @default(false) @map("mfa_enabled")
+  // Real platform-admin role (issue #101), replacing the temporary
+  // "guardian of any family" proxy PR #100 used for
+  // /admin/curriculum-definitions. Never auto-demoted -- see
+  // AuthService's platform-admin bootstrap sync for how this gets set.
+  isPlatformAdmin         Boolean                   @default(false) @map("is_platform_admin")
   createdAt               DateTime                  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt               DateTime                  @updatedAt @map("updated_at") @db.Timestamptz
   memberships             FamilyMember[]

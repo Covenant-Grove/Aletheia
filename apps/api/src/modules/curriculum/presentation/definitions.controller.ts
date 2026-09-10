@@ -19,19 +19,20 @@ import {
   type SkillDefinitionResponseDto,
   type TransitionDefinitionStatusDto,
 } from '@aletheia/contracts';
-import { JwtAuthGuard, GuardianOnlyGuard } from '../../../platform/auth/index.js';
+import { JwtAuthGuard, PlatformAdminGuard } from '../../../platform/auth/index.js';
 import { ZodValidationPipe } from '../../../platform/validation/index.js';
 import { DefinitionsService } from '../application/definitions.service.js';
 
 // Admin CRUD surface for the data-driven curriculum foundation (issue #96
-// Fase 0). Platform-wide, not family-scoped -- see GuardianOnlyGuard for
-// why (no platform-admin role exists in this codebase yet; this is a
-// known, flagged judgment call, not a final access-control design).
+// Fase 0). Platform-wide, not family-scoped -- gated by the real
+// platform-admin role (issue #101, User.isPlatformAdmin), checked via
+// PlatformAdminGuard. This replaces the temporary GuardianOnlyGuard PR
+// #100 used as a stopgap ("is this user a guardian of any family").
 //
 // Nothing here is read by any learner-facing request path yet.
 @ApiTags('Curriculum Definitions (Admin)')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, GuardianOnlyGuard)
+@UseGuards(JwtAuthGuard, PlatformAdminGuard)
 @Controller({ path: 'admin/curriculum-definitions', version: '1' })
 export class DefinitionsController {
   constructor(private readonly definitionsService: DefinitionsService) {}

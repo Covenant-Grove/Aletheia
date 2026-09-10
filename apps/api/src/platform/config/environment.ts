@@ -14,6 +14,11 @@ export interface Environment {
   resendApiKey: string | null;
   mailFromAddress: string;
   webOrigin: string;
+  // Bootstrap list for the platform-admin role (issue #101). Checked at
+  // register/login -- any user whose email matches gets isPlatformAdmin
+  // promoted to true if it wasn't already. Never used to demote: removing
+  // an email from this list does not revoke an already-granted flag.
+  platformAdminEmails: string[];
   objectStorage: {
     endpoint: string;
     accessKey: string;
@@ -68,6 +73,7 @@ const environmentSchema = z
         .regex(/^[0-9a-f]{64}$/i, 'MFA_ENCRYPTION_KEY is required and must be a 64-character hex string (32 bytes)'),
     ),
     CORS_ORIGIN: optionalValue,
+    PLATFORM_ADMIN_EMAILS: optionalValue,
     RESEND_API_KEY: optionalValue,
     MAIL_FROM_ADDRESS: optionalValue,
     WEB_ORIGIN: optionalUrl,
@@ -132,6 +138,11 @@ const environmentSchema = z
             .map((origin) => origin.trim())
             .filter((origin) => origin.length > 0)
         : ['http://localhost:3000'],
+      platformAdminEmails: environment.PLATFORM_ADMIN_EMAILS
+        ? environment.PLATFORM_ADMIN_EMAILS.split(',')
+            .map((email) => email.trim().toLowerCase())
+            .filter((email) => email.length > 0)
+        : [],
       resendApiKey: environment.RESEND_API_KEY ?? null,
       mailFromAddress: environment.MAIL_FROM_ADDRESS ?? 'Aletheia <onboarding@resend.dev>',
       webOrigin: environment.WEB_ORIGIN ?? 'http://localhost:3000',

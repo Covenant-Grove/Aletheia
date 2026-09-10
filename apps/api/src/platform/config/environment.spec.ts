@@ -147,6 +147,33 @@ describe('parseEnvironment', () => {
     });
   });
 
+  it('defaults platformAdminEmails to an empty list when unset', () => {
+    expect(
+      parseEnvironment({
+        NODE_ENV: 'test',
+        DATABASE_URL: 'postgresql://user:pass@localhost:5432/aletheia',
+        JWT_SECRET: validJwtSecret,
+        LEARNER_SESSION_JWT_SECRET: validLearnerJwtSecret,
+        MFA_ENCRYPTION_KEY: validMfaEncryptionKey,
+      }),
+    ).toMatchObject({ platformAdminEmails: [] });
+  });
+
+  it('splits and lowercases a comma-separated PLATFORM_ADMIN_EMAILS list', () => {
+    expect(
+      parseEnvironment({
+        NODE_ENV: 'production',
+        DATABASE_URL: 'postgresql://user:pass@localhost:5432/aletheia',
+        JWT_SECRET: validJwtSecret,
+        LEARNER_SESSION_JWT_SECRET: validLearnerJwtSecret,
+        MFA_ENCRYPTION_KEY: validMfaEncryptionKey,
+        PLATFORM_ADMIN_EMAILS: ' Admin@Example.com, second@example.com ',
+      }),
+    ).toMatchObject({
+      platformAdminEmails: ['admin@example.com', 'second@example.com'],
+    });
+  });
+
   it('defaults mail configuration to the console fallback sender', () => {
     expect(
       parseEnvironment({
@@ -206,6 +233,7 @@ describe('parseEnvironment', () => {
       learnerSessionJwtSecret: validLearnerJwtSecret,
       mfaEncryptionKey: validMfaEncryptionKey,
       corsOrigins: ['https://app.example.com'],
+      platformAdminEmails: [],
       resendApiKey: null,
       mailFromAddress: 'Aletheia <onboarding@resend.dev>',
       webOrigin: 'http://localhost:3000',

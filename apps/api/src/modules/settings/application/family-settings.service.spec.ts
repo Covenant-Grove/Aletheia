@@ -101,6 +101,7 @@ describe('FamilySettingsService', () => {
         mfaEnabled: false,
         createdAt: new Date().toISOString(),
       }),
+      isPlatformAdmin: jest.fn().mockResolvedValue(false),
     };
 
     service = new FamilySettingsService(
