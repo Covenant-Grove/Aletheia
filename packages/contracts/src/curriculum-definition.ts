@@ -112,3 +112,26 @@ export const curriculumDefinitionRubricResponseSchema = z.object({
 });
 
 export type CurriculumDefinitionRubricResponseDto = z.infer<typeof curriculumDefinitionRubricResponseSchema>;
+
+// Activity link -- added alongside ActivityDefinition (issue #96 section 7),
+// closing the "referencia atividades" gap CurriculumDefinition's first PR
+// intentionally left open (no ActivityDefinition table existed yet).
+export const addCurriculumDefinitionActivitySchema = z.object({
+  activityId: z.string().uuid(),
+  required: z.boolean().default(true),
+  order: z.number().int().min(0).default(0),
+});
+
+export type AddCurriculumDefinitionActivityDto = z.input<typeof addCurriculumDefinitionActivitySchema>;
+export type AddCurriculumDefinitionActivityOutput = z.output<typeof addCurriculumDefinitionActivitySchema>;
+
+export const curriculumDefinitionActivityResponseSchema = z.object({
+  id: z.string().uuid(),
+  curriculumDefinitionId: z.string().uuid(),
+  activityId: z.string().uuid(),
+  required: z.boolean(),
+  order: z.number().int(),
+  createdAt: z.string(),
+});
+
+export type CurriculumDefinitionActivityResponseDto = z.infer<typeof curriculumDefinitionActivityResponseSchema>;

@@ -4,12 +4,14 @@ import {
   addCurriculumDefinitionDomainSchema,
   addCurriculumDefinitionCompetencySchema,
   addCurriculumDefinitionRubricSchema,
+  addCurriculumDefinitionActivitySchema,
 } from './curriculum-definition.js';
 
 const MODEL_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const DOMAIN_ID = 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22';
 const COMPETENCY_ID = 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33';
 const RUBRIC_ID = 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44';
+const ACTIVITY_ID = 'e0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55';
 
 describe('Curriculum Definition Contracts', () => {
   it('validates a minimal curriculum definition with defaults', () => {
@@ -55,5 +57,11 @@ describe('Curriculum Definition Contracts', () => {
   it('validates a rubric link', () => {
     const parsed = addCurriculumDefinitionRubricSchema.parse({ rubricId: RUBRIC_ID });
     expect(parsed.rubricId).toBe(RUBRIC_ID);
+  });
+
+  it('validates an activity link with defaults', () => {
+    const parsed = addCurriculumDefinitionActivitySchema.parse({ activityId: ACTIVITY_ID });
+    expect(parsed.required).toBe(true);
+    expect(parsed.order).toBe(0);
   });
 });
