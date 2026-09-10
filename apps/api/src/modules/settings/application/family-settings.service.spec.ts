@@ -2,10 +2,15 @@ import { FamilySettingsService } from './family-settings.service.js';
 import { FamilySettingsRepository } from '../infrastructure/family-settings.repository.js';
 import { FamilySettingsEntity } from '../domain/family-settings.entity.js';
 import type { UpdateFamilySettingsDto } from '@aletheia/contracts';
+import type { MailSender } from '../../../platform/mail/mail-sender.js';
+import type { IdentityPublicApi } from '../../identity/application/public-api.js';
 
 describe('FamilySettingsService', () => {
   let service: FamilySettingsService;
   let mockSettings: Map<string, FamilySettingsEntity>;
+  let mockNotificationService: { createNotification: jest.Mock; wasNotifiedSince: jest.Mock };
+  let mockMailSender: jest.Mocked<MailSender>;
+  let mockIdentityApi: jest.Mocked<IdentityPublicApi>;
 
   beforeEach(() => {
     mockSettings = new Map();
@@ -77,12 +82,33 @@ describe('FamilySettingsService', () => {
       },
     } as unknown as FamilySettingsRepository;
 
-    const mockNotificationService = {
-      createNotification: async () => ({}) as never,
-      wasNotifiedSince: async () => false,
-    } as unknown as import('./notification.service.js').NotificationService;
+    mockNotificationService = {
+      createNotification: jest.fn().mockResolvedValue({} as never),
+      wasNotifiedSince: jest.fn().mockResolvedValue(false),
+    };
 
-    service = new FamilySettingsService(mockRepo, mockNotificationService);
+    mockMailSender = {
+      send: jest.fn().mockResolvedValue(undefined),
+    };
+
+    mockIdentityApi = {
+      verifyToken: jest.fn(),
+      findUserById: jest.fn().mockResolvedValue({
+        id: 'user-1',
+        email: 'guardian@example.com',
+        fullName: 'Guardian',
+        emailVerified: true,
+        mfaEnabled: false,
+        createdAt: new Date().toISOString(),
+      }),
+    };
+
+    service = new FamilySettingsService(
+      mockRepo,
+      mockNotificationService as unknown as import('./notification.service.js').NotificationService,
+      mockMailSender,
+      mockIdentityApi,
+    );
   });
 
   describe('getSettings', () => {
@@ -130,6 +156,62 @@ describe('FamilySettingsService', () => {
       expect(updated.attendanceReminderEnabled).toBe(false);
       expect(updated.emailNotificationsEnabled).toBe(false);
       expect(updated.inAppNotificationsEnabled).toBe(true);
+    });
+  });
+
+  describe('createNotification', () => {
+    const dto = {
+      userId: 'user-1',
+      type: 'SYSTEM_NOTICE' as const,
+      title: 'Test title',
+      message: 'Test message',
+    };
+
+    it('creates the in-app notification when inAppNotificationsEnabled is true (the default)', async () => {
+      mockNotificationService.createNotification.mockResolvedValue({ id: 'notif-1' } as never);
+
+      const result = await service.createNotification('fam-1', dto);
+
+      expect(result).toEqual({ id: 'notif-1' });
+      expect(mockNotificationService.createNotification).toHaveBeenCalledWith('fam-1', dto);
+    });
+
+    it('skips the in-app notification and returns null when inAppNotificationsEnabled is false', async () => {
+      await service.updateSettings('fam-1', { inAppNotificationsEnabled: false });
+
+      const result = await service.createNotification('fam-1', dto);
+
+      expect(result).toBeNull();
+      expect(mockNotificationService.createNotification).not.toHaveBeenCalled();
+    });
+
+    it('sends an email when emailNotificationsEnabled is true (the default)', async () => {
+      await service.createNotification('fam-1', dto);
+
+      expect(mockIdentityApi.findUserById).toHaveBeenCalledWith('user-1');
+      expect(mockMailSender.send).toHaveBeenCalledWith({
+        to: 'guardian@example.com',
+        subject: 'Test title',
+        text: 'Test message',
+        html: '<p>Test message</p>',
+      });
+    });
+
+    it('does not send an email when emailNotificationsEnabled is false', async () => {
+      await service.updateSettings('fam-1', { emailNotificationsEnabled: false });
+
+      await service.createNotification('fam-1', dto);
+
+      expect(mockMailSender.send).not.toHaveBeenCalled();
+    });
+
+    it('still returns the created notification even if sending the email fails', async () => {
+      mockMailSender.send.mockRejectedValueOnce(new Error('provider down'));
+      mockNotificationService.createNotification.mockResolvedValue({ id: 'notif-2' } as never);
+
+      const result = await service.createNotification('fam-1', dto);
+
+      expect(result).toEqual({ id: 'notif-2' });
     });
   });
 });
