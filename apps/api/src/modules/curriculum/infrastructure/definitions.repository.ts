@@ -5,6 +5,17 @@ import type {
   PedagogicalModelDefinition,
   LearningPath,
   SkillDefinition,
+  RubricDefinition,
+  RubricCriterion,
+  EvidenceTypeDefinition,
+  CurriculumDefinition,
+  CurriculumDefinitionDomain,
+  CurriculumDefinitionCompetency,
+  CurriculumDefinitionRubric,
+  CurriculumDefinitionActivity,
+  ActivityDefinition,
+  ActivityDefinitionCompetency,
+  ActivityDefinitionEvidenceType,
   Prisma,
 } from '@prisma/client';
 import type {
@@ -13,14 +24,27 @@ import type {
   CreatePedagogicalModelDefinitionOutput,
   CreateLearningPathOutput,
   CreateSkillDefinitionOutput,
+  CreateRubricDefinitionOutput,
+  CreateRubricCriterionOutput,
+  CreateEvidenceTypeDefinitionOutput,
+  CreateCurriculumDefinitionOutput,
+  AddCurriculumDefinitionDomainOutput,
+  AddCurriculumDefinitionCompetencyOutput,
+  AddCurriculumDefinitionRubricOutput,
+  AddCurriculumDefinitionActivityOutput,
+  CreateActivityDefinitionOutput,
+  AddActivityDefinitionCompetencyOutput,
+  AddActivityDefinitionEvidenceTypeOutput,
 } from '@aletheia/contracts';
 import { PrismaService } from '../../../platform/database/prisma.service.js';
 import type { DefinitionStatusUpdate } from '../application/definition-status-transition.js';
 
-// Thin CRUD for the Definition/Version tables added across #97/#98/#99
-// (LearningDomain, CompetencyDefinition, PedagogicalModelDefinition,
-// LearningPath, SkillDefinition). No business logic here beyond straight
-// Prisma calls -- status-transition validation lives in
+// Thin CRUD for the Definition/Version tables added across #97-#99 and
+// #104-#107 (LearningDomain, CompetencyDefinition,
+// PedagogicalModelDefinition, LearningPath, SkillDefinition,
+// RubricDefinition, EvidenceTypeDefinition, CurriculumDefinition,
+// ActivityDefinition, and their join tables). No business logic here
+// beyond straight Prisma calls -- status-transition validation lives in
 // definition-status-transition.ts and is applied by the service layer.
 @Injectable()
 export class DefinitionsRepository {
@@ -169,5 +193,244 @@ export class DefinitionsRepository {
 
   updateSkillDefinitionStatus(id: string, update: DefinitionStatusUpdate): Promise<SkillDefinition> {
     return this.prisma.skillDefinition.update({ where: { id }, data: update });
+  }
+
+  // Rubric Definition
+  createRubricDefinition(dto: CreateRubricDefinitionOutput): Promise<RubricDefinition> {
+    return this.prisma.rubricDefinition.create({
+      data: {
+        code: dto.code,
+        version: dto.version,
+        status: dto.status,
+        schemaVersion: dto.schemaVersion,
+        competencyId: dto.competencyId ?? null,
+        name: dto.name,
+        description: dto.description ?? null,
+        metadata: dto.metadata as Prisma.InputJsonValue,
+      },
+    });
+  }
+
+  listRubricDefinitions(): Promise<RubricDefinition[]> {
+    return this.prisma.rubricDefinition.findMany({ orderBy: [{ code: 'asc' }, { version: 'desc' }] });
+  }
+
+  findRubricDefinitionById(id: string): Promise<RubricDefinition | null> {
+    return this.prisma.rubricDefinition.findUnique({ where: { id } });
+  }
+
+  updateRubricDefinitionStatus(id: string, update: DefinitionStatusUpdate): Promise<RubricDefinition> {
+    return this.prisma.rubricDefinition.update({ where: { id }, data: update });
+  }
+
+  createRubricCriterion(rubricId: string, dto: CreateRubricCriterionOutput): Promise<RubricCriterion> {
+    return this.prisma.rubricCriterion.create({
+      data: {
+        rubricId,
+        code: dto.code,
+        label: dto.label,
+        weight: dto.weight,
+        order: dto.order,
+        scaleMin: dto.scaleMin,
+        scaleMax: dto.scaleMax,
+        metadata: dto.metadata as Prisma.InputJsonValue,
+      },
+    });
+  }
+
+  listRubricCriteria(rubricId: string): Promise<RubricCriterion[]> {
+    return this.prisma.rubricCriterion.findMany({ where: { rubricId }, orderBy: { order: 'asc' } });
+  }
+
+  // Evidence Type Definition
+  createEvidenceTypeDefinition(dto: CreateEvidenceTypeDefinitionOutput): Promise<EvidenceTypeDefinition> {
+    return this.prisma.evidenceTypeDefinition.create({
+      data: {
+        code: dto.code,
+        version: dto.version,
+        status: dto.status,
+        schemaVersion: dto.schemaVersion,
+        name: dto.name,
+        description: dto.description ?? null,
+        metadata: dto.metadata as Prisma.InputJsonValue,
+      },
+    });
+  }
+
+  listEvidenceTypeDefinitions(): Promise<EvidenceTypeDefinition[]> {
+    return this.prisma.evidenceTypeDefinition.findMany({ orderBy: [{ code: 'asc' }, { version: 'desc' }] });
+  }
+
+  findEvidenceTypeDefinitionById(id: string): Promise<EvidenceTypeDefinition | null> {
+    return this.prisma.evidenceTypeDefinition.findUnique({ where: { id } });
+  }
+
+  updateEvidenceTypeDefinitionStatus(id: string, update: DefinitionStatusUpdate): Promise<EvidenceTypeDefinition> {
+    return this.prisma.evidenceTypeDefinition.update({ where: { id }, data: update });
+  }
+
+  // Curriculum Definition
+  createCurriculumDefinition(dto: CreateCurriculumDefinitionOutput): Promise<CurriculumDefinition> {
+    return this.prisma.curriculumDefinition.create({
+      data: {
+        code: dto.code,
+        version: dto.version,
+        status: dto.status,
+        schemaVersion: dto.schemaVersion,
+        name: dto.name,
+        description: dto.description ?? null,
+        pedagogicalModelDefinitionId: dto.pedagogicalModelDefinitionId ?? null,
+        metadata: dto.metadata as Prisma.InputJsonValue,
+      },
+    });
+  }
+
+  listCurriculumDefinitions(): Promise<CurriculumDefinition[]> {
+    return this.prisma.curriculumDefinition.findMany({ orderBy: [{ code: 'asc' }, { version: 'desc' }] });
+  }
+
+  findCurriculumDefinitionById(id: string): Promise<CurriculumDefinition | null> {
+    return this.prisma.curriculumDefinition.findUnique({ where: { id } });
+  }
+
+  updateCurriculumDefinitionStatus(id: string, update: DefinitionStatusUpdate): Promise<CurriculumDefinition> {
+    return this.prisma.curriculumDefinition.update({ where: { id }, data: update });
+  }
+
+  addCurriculumDefinitionDomain(
+    curriculumDefinitionId: string,
+    dto: AddCurriculumDefinitionDomainOutput,
+  ): Promise<CurriculumDefinitionDomain> {
+    return this.prisma.curriculumDefinitionDomain.create({
+      data: { curriculumDefinitionId, domainId: dto.domainId, required: dto.required, order: dto.order },
+    });
+  }
+
+  listCurriculumDefinitionDomains(curriculumDefinitionId: string): Promise<CurriculumDefinitionDomain[]> {
+    return this.prisma.curriculumDefinitionDomain.findMany({
+      where: { curriculumDefinitionId },
+      orderBy: { order: 'asc' },
+    });
+  }
+
+  addCurriculumDefinitionCompetency(
+    curriculumDefinitionId: string,
+    dto: AddCurriculumDefinitionCompetencyOutput,
+  ): Promise<CurriculumDefinitionCompetency> {
+    return this.prisma.curriculumDefinitionCompetency.create({
+      data: {
+        curriculumDefinitionId,
+        competencyId: dto.competencyId,
+        required: dto.required,
+        order: dto.order,
+      },
+    });
+  }
+
+  listCurriculumDefinitionCompetencies(
+    curriculumDefinitionId: string,
+  ): Promise<CurriculumDefinitionCompetency[]> {
+    return this.prisma.curriculumDefinitionCompetency.findMany({
+      where: { curriculumDefinitionId },
+      orderBy: { order: 'asc' },
+    });
+  }
+
+  addCurriculumDefinitionRubric(
+    curriculumDefinitionId: string,
+    dto: AddCurriculumDefinitionRubricOutput,
+  ): Promise<CurriculumDefinitionRubric> {
+    return this.prisma.curriculumDefinitionRubric.create({
+      data: { curriculumDefinitionId, rubricId: dto.rubricId },
+    });
+  }
+
+  listCurriculumDefinitionRubrics(curriculumDefinitionId: string): Promise<CurriculumDefinitionRubric[]> {
+    return this.prisma.curriculumDefinitionRubric.findMany({ where: { curriculumDefinitionId } });
+  }
+
+  addCurriculumDefinitionActivity(
+    curriculumDefinitionId: string,
+    dto: AddCurriculumDefinitionActivityOutput,
+  ): Promise<CurriculumDefinitionActivity> {
+    return this.prisma.curriculumDefinitionActivity.create({
+      data: {
+        curriculumDefinitionId,
+        activityId: dto.activityId,
+        required: dto.required,
+        order: dto.order,
+      },
+    });
+  }
+
+  listCurriculumDefinitionActivities(
+    curriculumDefinitionId: string,
+  ): Promise<CurriculumDefinitionActivity[]> {
+    return this.prisma.curriculumDefinitionActivity.findMany({
+      where: { curriculumDefinitionId },
+      orderBy: { order: 'asc' },
+    });
+  }
+
+  // Activity Definition
+  createActivityDefinition(dto: CreateActivityDefinitionOutput): Promise<ActivityDefinition> {
+    return this.prisma.activityDefinition.create({
+      data: {
+        code: dto.code,
+        version: dto.version,
+        status: dto.status,
+        schemaVersion: dto.schemaVersion,
+        name: dto.name,
+        description: dto.description ?? null,
+        ageMin: dto.ageMin ?? null,
+        ageMax: dto.ageMax ?? null,
+        estimatedDurationMinutes: dto.estimatedDurationMinutes ?? null,
+        supervisionRequired: dto.supervisionRequired,
+        riskLevel: dto.riskLevel ?? null,
+        evidenceRequirementMode: dto.evidenceRequirementMode,
+        metadata: dto.metadata as Prisma.InputJsonValue,
+      },
+    });
+  }
+
+  listActivityDefinitions(): Promise<ActivityDefinition[]> {
+    return this.prisma.activityDefinition.findMany({ orderBy: [{ code: 'asc' }, { version: 'desc' }] });
+  }
+
+  findActivityDefinitionById(id: string): Promise<ActivityDefinition | null> {
+    return this.prisma.activityDefinition.findUnique({ where: { id } });
+  }
+
+  updateActivityDefinitionStatus(id: string, update: DefinitionStatusUpdate): Promise<ActivityDefinition> {
+    return this.prisma.activityDefinition.update({ where: { id }, data: update });
+  }
+
+  addActivityDefinitionCompetency(
+    activityId: string,
+    dto: AddActivityDefinitionCompetencyOutput,
+  ): Promise<ActivityDefinitionCompetency> {
+    return this.prisma.activityDefinitionCompetency.create({
+      data: { activityId, competencyId: dto.competencyId, required: dto.required, order: dto.order },
+    });
+  }
+
+  listActivityDefinitionCompetencies(activityId: string): Promise<ActivityDefinitionCompetency[]> {
+    return this.prisma.activityDefinitionCompetency.findMany({
+      where: { activityId },
+      orderBy: { order: 'asc' },
+    });
+  }
+
+  addActivityDefinitionEvidenceType(
+    activityId: string,
+    dto: AddActivityDefinitionEvidenceTypeOutput,
+  ): Promise<ActivityDefinitionEvidenceType> {
+    return this.prisma.activityDefinitionEvidenceType.create({
+      data: { activityId, evidenceTypeId: dto.evidenceTypeId },
+    });
+  }
+
+  listActivityDefinitionEvidenceTypes(activityId: string): Promise<ActivityDefinitionEvidenceType[]> {
+    return this.prisma.activityDefinitionEvidenceType.findMany({ where: { activityId } });
   }
 }

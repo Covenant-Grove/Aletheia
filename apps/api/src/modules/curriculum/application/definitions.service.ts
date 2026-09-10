@@ -1,10 +1,22 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import type {
   LearningDomain,
   CompetencyDefinition,
   PedagogicalModelDefinition,
   LearningPath,
   SkillDefinition,
+  RubricDefinition,
+  RubricCriterion,
+  EvidenceTypeDefinition,
+  CurriculumDefinition,
+  CurriculumDefinitionDomain,
+  CurriculumDefinitionCompetency,
+  CurriculumDefinitionRubric,
+  CurriculumDefinitionActivity,
+  ActivityDefinition,
+  ActivityDefinitionCompetency,
+  ActivityDefinitionEvidenceType,
 } from '@prisma/client';
 import type {
   CreateLearningDomainOutput,
@@ -17,6 +29,28 @@ import type {
   LearningPathResponseDto,
   CreateSkillDefinitionOutput,
   SkillDefinitionResponseDto,
+  CreateRubricDefinitionOutput,
+  RubricDefinitionResponseDto,
+  CreateRubricCriterionOutput,
+  RubricCriterionResponseDto,
+  CreateEvidenceTypeDefinitionOutput,
+  EvidenceTypeDefinitionResponseDto,
+  CreateCurriculumDefinitionOutput,
+  CurriculumDefinitionResponseDto,
+  AddCurriculumDefinitionDomainOutput,
+  CurriculumDefinitionDomainResponseDto,
+  AddCurriculumDefinitionCompetencyOutput,
+  CurriculumDefinitionCompetencyResponseDto,
+  AddCurriculumDefinitionRubricOutput,
+  CurriculumDefinitionRubricResponseDto,
+  AddCurriculumDefinitionActivityOutput,
+  CurriculumDefinitionActivityResponseDto,
+  CreateActivityDefinitionOutput,
+  ActivityDefinitionResponseDto,
+  AddActivityDefinitionCompetencyOutput,
+  ActivityDefinitionCompetencyResponseDto,
+  AddActivityDefinitionEvidenceTypeOutput,
+  ActivityDefinitionEvidenceTypeResponseDto,
   DefinitionStatus,
 } from '@aletheia/contracts';
 import { DefinitionsRepository } from '../infrastructure/definitions.repository.js';
@@ -24,10 +58,11 @@ import { computeStatusTransition } from './definition-status-transition.js';
 
 // Admin CRUD for the data-driven curriculum foundation (issue #96 Fase 0,
 // "test from section 40": adding a new domain/competency/track/skill/
-// pedagogical model should be a data write through this API, not a code
-// change + deploy. DRAFT -> PUBLISHED -> DEPRECATED -> ARCHIVED transitions
-// are explicit calls (see definition-status-transition.ts), never an
-// implicit side effect of create/update.
+// pedagogical model/rubric/evidence type/curriculum/activity should be a
+// data write through this API, not a code change + deploy. DRAFT ->
+// PUBLISHED -> DEPRECATED -> ARCHIVED transitions are explicit calls (see
+// definition-status-transition.ts), never an implicit side effect of
+// create/update.
 //
 // Deliberately NOT wired into any learner-facing read path -- CurriculumService
 // still resolves pedagogical frameworks via the pre-existing enum +
@@ -140,6 +175,253 @@ export class DefinitionsService {
     return this.toSkillDefinitionDto(row);
   }
 
+  // Rubric Definition
+  async createRubricDefinition(dto: CreateRubricDefinitionOutput): Promise<RubricDefinitionResponseDto> {
+    const row = await this.withWriteErrorMapping(() => this.repository.createRubricDefinition(dto));
+    return this.toRubricDefinitionDto(row);
+  }
+
+  async listRubricDefinitions(): Promise<RubricDefinitionResponseDto[]> {
+    const rows = await this.repository.listRubricDefinitions();
+    return rows.map((row) => this.toRubricDefinitionDto(row));
+  }
+
+  async transitionRubricDefinitionStatus(id: string, status: DefinitionStatus): Promise<RubricDefinitionResponseDto> {
+    const existing = await this.repository.findRubricDefinitionById(id);
+    if (!existing) throw new NotFoundException('Rubric definition not found.');
+    const update = computeStatusTransition(existing.status as DefinitionStatus, status);
+    const row = await this.repository.updateRubricDefinitionStatus(id, update);
+    return this.toRubricDefinitionDto(row);
+  }
+
+  async createRubricCriterion(
+    rubricId: string,
+    dto: CreateRubricCriterionOutput,
+  ): Promise<RubricCriterionResponseDto> {
+    const rubric = await this.repository.findRubricDefinitionById(rubricId);
+    if (!rubric) throw new NotFoundException('Rubric definition not found.');
+    const row = await this.withWriteErrorMapping(() => this.repository.createRubricCriterion(rubricId, dto));
+    return this.toRubricCriterionDto(row);
+  }
+
+  async listRubricCriteria(rubricId: string): Promise<RubricCriterionResponseDto[]> {
+    const rubric = await this.repository.findRubricDefinitionById(rubricId);
+    if (!rubric) throw new NotFoundException('Rubric definition not found.');
+    const rows = await this.repository.listRubricCriteria(rubricId);
+    return rows.map((row) => this.toRubricCriterionDto(row));
+  }
+
+  // Evidence Type Definition
+  async createEvidenceTypeDefinition(
+    dto: CreateEvidenceTypeDefinitionOutput,
+  ): Promise<EvidenceTypeDefinitionResponseDto> {
+    const row = await this.withWriteErrorMapping(() => this.repository.createEvidenceTypeDefinition(dto));
+    return this.toEvidenceTypeDefinitionDto(row);
+  }
+
+  async listEvidenceTypeDefinitions(): Promise<EvidenceTypeDefinitionResponseDto[]> {
+    const rows = await this.repository.listEvidenceTypeDefinitions();
+    return rows.map((row) => this.toEvidenceTypeDefinitionDto(row));
+  }
+
+  async transitionEvidenceTypeDefinitionStatus(
+    id: string,
+    status: DefinitionStatus,
+  ): Promise<EvidenceTypeDefinitionResponseDto> {
+    const existing = await this.repository.findEvidenceTypeDefinitionById(id);
+    if (!existing) throw new NotFoundException('Evidence type definition not found.');
+    const update = computeStatusTransition(existing.status as DefinitionStatus, status);
+    const row = await this.repository.updateEvidenceTypeDefinitionStatus(id, update);
+    return this.toEvidenceTypeDefinitionDto(row);
+  }
+
+  // Curriculum Definition
+  async createCurriculumDefinition(dto: CreateCurriculumDefinitionOutput): Promise<CurriculumDefinitionResponseDto> {
+    const row = await this.withWriteErrorMapping(() => this.repository.createCurriculumDefinition(dto));
+    return this.toCurriculumDefinitionDto(row);
+  }
+
+  async listCurriculumDefinitions(): Promise<CurriculumDefinitionResponseDto[]> {
+    const rows = await this.repository.listCurriculumDefinitions();
+    return rows.map((row) => this.toCurriculumDefinitionDto(row));
+  }
+
+  async transitionCurriculumDefinitionStatus(
+    id: string,
+    status: DefinitionStatus,
+  ): Promise<CurriculumDefinitionResponseDto> {
+    const existing = await this.repository.findCurriculumDefinitionById(id);
+    if (!existing) throw new NotFoundException('Curriculum definition not found.');
+    const update = computeStatusTransition(existing.status as DefinitionStatus, status);
+    const row = await this.repository.updateCurriculumDefinitionStatus(id, update);
+    return this.toCurriculumDefinitionDto(row);
+  }
+
+  async addCurriculumDefinitionDomain(
+    curriculumDefinitionId: string,
+    dto: AddCurriculumDefinitionDomainOutput,
+  ): Promise<CurriculumDefinitionDomainResponseDto> {
+    await this.requireCurriculumDefinition(curriculumDefinitionId);
+    const row = await this.withWriteErrorMapping(() =>
+      this.repository.addCurriculumDefinitionDomain(curriculumDefinitionId, dto),
+    );
+    return this.toCurriculumDefinitionDomainDto(row);
+  }
+
+  async listCurriculumDefinitionDomains(
+    curriculumDefinitionId: string,
+  ): Promise<CurriculumDefinitionDomainResponseDto[]> {
+    await this.requireCurriculumDefinition(curriculumDefinitionId);
+    const rows = await this.repository.listCurriculumDefinitionDomains(curriculumDefinitionId);
+    return rows.map((row) => this.toCurriculumDefinitionDomainDto(row));
+  }
+
+  async addCurriculumDefinitionCompetency(
+    curriculumDefinitionId: string,
+    dto: AddCurriculumDefinitionCompetencyOutput,
+  ): Promise<CurriculumDefinitionCompetencyResponseDto> {
+    await this.requireCurriculumDefinition(curriculumDefinitionId);
+    const row = await this.withWriteErrorMapping(() =>
+      this.repository.addCurriculumDefinitionCompetency(curriculumDefinitionId, dto),
+    );
+    return this.toCurriculumDefinitionCompetencyDto(row);
+  }
+
+  async listCurriculumDefinitionCompetencies(
+    curriculumDefinitionId: string,
+  ): Promise<CurriculumDefinitionCompetencyResponseDto[]> {
+    await this.requireCurriculumDefinition(curriculumDefinitionId);
+    const rows = await this.repository.listCurriculumDefinitionCompetencies(curriculumDefinitionId);
+    return rows.map((row) => this.toCurriculumDefinitionCompetencyDto(row));
+  }
+
+  async addCurriculumDefinitionRubric(
+    curriculumDefinitionId: string,
+    dto: AddCurriculumDefinitionRubricOutput,
+  ): Promise<CurriculumDefinitionRubricResponseDto> {
+    await this.requireCurriculumDefinition(curriculumDefinitionId);
+    const row = await this.withWriteErrorMapping(() =>
+      this.repository.addCurriculumDefinitionRubric(curriculumDefinitionId, dto),
+    );
+    return this.toCurriculumDefinitionRubricDto(row);
+  }
+
+  async listCurriculumDefinitionRubrics(
+    curriculumDefinitionId: string,
+  ): Promise<CurriculumDefinitionRubricResponseDto[]> {
+    await this.requireCurriculumDefinition(curriculumDefinitionId);
+    const rows = await this.repository.listCurriculumDefinitionRubrics(curriculumDefinitionId);
+    return rows.map((row) => this.toCurriculumDefinitionRubricDto(row));
+  }
+
+  async addCurriculumDefinitionActivity(
+    curriculumDefinitionId: string,
+    dto: AddCurriculumDefinitionActivityOutput,
+  ): Promise<CurriculumDefinitionActivityResponseDto> {
+    await this.requireCurriculumDefinition(curriculumDefinitionId);
+    const row = await this.withWriteErrorMapping(() =>
+      this.repository.addCurriculumDefinitionActivity(curriculumDefinitionId, dto),
+    );
+    return this.toCurriculumDefinitionActivityDto(row);
+  }
+
+  async listCurriculumDefinitionActivities(
+    curriculumDefinitionId: string,
+  ): Promise<CurriculumDefinitionActivityResponseDto[]> {
+    await this.requireCurriculumDefinition(curriculumDefinitionId);
+    const rows = await this.repository.listCurriculumDefinitionActivities(curriculumDefinitionId);
+    return rows.map((row) => this.toCurriculumDefinitionActivityDto(row));
+  }
+
+  // Activity Definition
+  async createActivityDefinition(dto: CreateActivityDefinitionOutput): Promise<ActivityDefinitionResponseDto> {
+    const row = await this.withWriteErrorMapping(() => this.repository.createActivityDefinition(dto));
+    return this.toActivityDefinitionDto(row);
+  }
+
+  async listActivityDefinitions(): Promise<ActivityDefinitionResponseDto[]> {
+    const rows = await this.repository.listActivityDefinitions();
+    return rows.map((row) => this.toActivityDefinitionDto(row));
+  }
+
+  async transitionActivityDefinitionStatus(
+    id: string,
+    status: DefinitionStatus,
+  ): Promise<ActivityDefinitionResponseDto> {
+    const existing = await this.repository.findActivityDefinitionById(id);
+    if (!existing) throw new NotFoundException('Activity definition not found.');
+    const update = computeStatusTransition(existing.status as DefinitionStatus, status);
+    const row = await this.repository.updateActivityDefinitionStatus(id, update);
+    return this.toActivityDefinitionDto(row);
+  }
+
+  async addActivityDefinitionCompetency(
+    activityId: string,
+    dto: AddActivityDefinitionCompetencyOutput,
+  ): Promise<ActivityDefinitionCompetencyResponseDto> {
+    await this.requireActivityDefinition(activityId);
+    const row = await this.withWriteErrorMapping(() =>
+      this.repository.addActivityDefinitionCompetency(activityId, dto),
+    );
+    return this.toActivityDefinitionCompetencyDto(row);
+  }
+
+  async listActivityDefinitionCompetencies(activityId: string): Promise<ActivityDefinitionCompetencyResponseDto[]> {
+    await this.requireActivityDefinition(activityId);
+    const rows = await this.repository.listActivityDefinitionCompetencies(activityId);
+    return rows.map((row) => this.toActivityDefinitionCompetencyDto(row));
+  }
+
+  async addActivityDefinitionEvidenceType(
+    activityId: string,
+    dto: AddActivityDefinitionEvidenceTypeOutput,
+  ): Promise<ActivityDefinitionEvidenceTypeResponseDto> {
+    await this.requireActivityDefinition(activityId);
+    const row = await this.withWriteErrorMapping(() =>
+      this.repository.addActivityDefinitionEvidenceType(activityId, dto),
+    );
+    return this.toActivityDefinitionEvidenceTypeDto(row);
+  }
+
+  async listActivityDefinitionEvidenceTypes(
+    activityId: string,
+  ): Promise<ActivityDefinitionEvidenceTypeResponseDto[]> {
+    await this.requireActivityDefinition(activityId);
+    const rows = await this.repository.listActivityDefinitionEvidenceTypes(activityId);
+    return rows.map((row) => this.toActivityDefinitionEvidenceTypeDto(row));
+  }
+
+  // Helpers
+  private async requireCurriculumDefinition(id: string): Promise<void> {
+    const existing = await this.repository.findCurriculumDefinitionById(id);
+    if (!existing) throw new NotFoundException('Curriculum definition not found.');
+  }
+
+  private async requireActivityDefinition(id: string): Promise<void> {
+    const existing = await this.repository.findActivityDefinitionById(id);
+    if (!existing) throw new NotFoundException('Activity definition not found.');
+  }
+
+  // Join-table and cross-referencing writes can fail on a missing FK
+  // (P2003 -- the referenced row doesn't exist) or a duplicate link
+  // (P2002 -- unique constraint), both caller mistakes rather than server
+  // errors. Every other Prisma error is left to propagate as a 500.
+  private async withWriteErrorMapping<T>(write: () => Promise<T>): Promise<T> {
+    try {
+      return await write();
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2003') {
+          throw new BadRequestException('One or more referenced definitions do not exist.');
+        }
+        if (error.code === 'P2002') {
+          throw new BadRequestException('This definition or link already exists.');
+        }
+      }
+      throw error;
+    }
+  }
+
   // Mappers
   private toLearningDomainDto(row: LearningDomain): LearningDomainResponseDto {
     return {
@@ -223,6 +505,164 @@ export class DefinitionsService {
       createdAt: row.createdAt.toISOString(),
       publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
       deprecatedAt: row.deprecatedAt ? row.deprecatedAt.toISOString() : null,
+    };
+  }
+
+  private toRubricDefinitionDto(row: RubricDefinition): RubricDefinitionResponseDto {
+    return {
+      id: row.id,
+      code: row.code,
+      version: row.version,
+      status: row.status as DefinitionStatus,
+      schemaVersion: row.schemaVersion,
+      competencyId: row.competencyId,
+      name: row.name,
+      description: row.description,
+      metadata: row.metadata as Record<string, unknown>,
+      createdAt: row.createdAt.toISOString(),
+      publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
+      deprecatedAt: row.deprecatedAt ? row.deprecatedAt.toISOString() : null,
+    };
+  }
+
+  private toRubricCriterionDto(row: RubricCriterion): RubricCriterionResponseDto {
+    return {
+      id: row.id,
+      rubricId: row.rubricId,
+      code: row.code,
+      label: row.label,
+      weight: row.weight,
+      order: row.order,
+      scaleMin: row.scaleMin,
+      scaleMax: row.scaleMax,
+      metadata: row.metadata as Record<string, unknown>,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    };
+  }
+
+  private toEvidenceTypeDefinitionDto(row: EvidenceTypeDefinition): EvidenceTypeDefinitionResponseDto {
+    return {
+      id: row.id,
+      code: row.code,
+      version: row.version,
+      status: row.status as DefinitionStatus,
+      schemaVersion: row.schemaVersion,
+      name: row.name,
+      description: row.description,
+      metadata: row.metadata as Record<string, unknown>,
+      createdAt: row.createdAt.toISOString(),
+      publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
+      deprecatedAt: row.deprecatedAt ? row.deprecatedAt.toISOString() : null,
+    };
+  }
+
+  private toCurriculumDefinitionDto(row: CurriculumDefinition): CurriculumDefinitionResponseDto {
+    return {
+      id: row.id,
+      code: row.code,
+      version: row.version,
+      status: row.status as DefinitionStatus,
+      schemaVersion: row.schemaVersion,
+      name: row.name,
+      description: row.description,
+      pedagogicalModelDefinitionId: row.pedagogicalModelDefinitionId,
+      metadata: row.metadata as Record<string, unknown>,
+      createdAt: row.createdAt.toISOString(),
+      publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
+      deprecatedAt: row.deprecatedAt ? row.deprecatedAt.toISOString() : null,
+    };
+  }
+
+  private toCurriculumDefinitionDomainDto(row: CurriculumDefinitionDomain): CurriculumDefinitionDomainResponseDto {
+    return {
+      id: row.id,
+      curriculumDefinitionId: row.curriculumDefinitionId,
+      domainId: row.domainId,
+      required: row.required,
+      order: row.order,
+      createdAt: row.createdAt.toISOString(),
+    };
+  }
+
+  private toCurriculumDefinitionCompetencyDto(
+    row: CurriculumDefinitionCompetency,
+  ): CurriculumDefinitionCompetencyResponseDto {
+    return {
+      id: row.id,
+      curriculumDefinitionId: row.curriculumDefinitionId,
+      competencyId: row.competencyId,
+      required: row.required,
+      order: row.order,
+      createdAt: row.createdAt.toISOString(),
+    };
+  }
+
+  private toCurriculumDefinitionRubricDto(row: CurriculumDefinitionRubric): CurriculumDefinitionRubricResponseDto {
+    return {
+      id: row.id,
+      curriculumDefinitionId: row.curriculumDefinitionId,
+      rubricId: row.rubricId,
+      createdAt: row.createdAt.toISOString(),
+    };
+  }
+
+  private toCurriculumDefinitionActivityDto(
+    row: CurriculumDefinitionActivity,
+  ): CurriculumDefinitionActivityResponseDto {
+    return {
+      id: row.id,
+      curriculumDefinitionId: row.curriculumDefinitionId,
+      activityId: row.activityId,
+      required: row.required,
+      order: row.order,
+      createdAt: row.createdAt.toISOString(),
+    };
+  }
+
+  private toActivityDefinitionDto(row: ActivityDefinition): ActivityDefinitionResponseDto {
+    return {
+      id: row.id,
+      code: row.code,
+      version: row.version,
+      status: row.status as DefinitionStatus,
+      schemaVersion: row.schemaVersion,
+      name: row.name,
+      description: row.description,
+      ageMin: row.ageMin,
+      ageMax: row.ageMax,
+      estimatedDurationMinutes: row.estimatedDurationMinutes,
+      supervisionRequired: row.supervisionRequired,
+      riskLevel: row.riskLevel,
+      evidenceRequirementMode: row.evidenceRequirementMode as ActivityDefinitionResponseDto['evidenceRequirementMode'],
+      metadata: row.metadata as Record<string, unknown>,
+      createdAt: row.createdAt.toISOString(),
+      publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
+      deprecatedAt: row.deprecatedAt ? row.deprecatedAt.toISOString() : null,
+    };
+  }
+
+  private toActivityDefinitionCompetencyDto(
+    row: ActivityDefinitionCompetency,
+  ): ActivityDefinitionCompetencyResponseDto {
+    return {
+      id: row.id,
+      activityId: row.activityId,
+      competencyId: row.competencyId,
+      required: row.required,
+      order: row.order,
+      createdAt: row.createdAt.toISOString(),
+    };
+  }
+
+  private toActivityDefinitionEvidenceTypeDto(
+    row: ActivityDefinitionEvidenceType,
+  ): ActivityDefinitionEvidenceTypeResponseDto {
+    return {
+      id: row.id,
+      activityId: row.activityId,
+      evidenceTypeId: row.evidenceTypeId,
+      createdAt: row.createdAt.toISOString(),
     };
   }
 }

@@ -47,7 +47,10 @@ export const createActivityDefinitionSchema = z.object({
   riskLevel: z.string().max(50).nullish(),
   evidenceRequirementMode: evidenceRequirementModeSchema.default('ANY'),
   metadata: activityMetadataSchema.partial().default({}),
-});
+}).refine(
+  ({ ageMin, ageMax }) => ageMin == null || ageMax == null || ageMin <= ageMax,
+  { message: 'ageMax must be greater than or equal to ageMin', path: ['ageMax'] },
+);
 
 export type CreateActivityDefinitionDto = z.input<typeof createActivityDefinitionSchema>;
 export type CreateActivityDefinitionOutput = z.output<typeof createActivityDefinitionSchema>;

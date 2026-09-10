@@ -9,6 +9,23 @@ const COMPETENCY_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const EVIDENCE_TYPE_ID = 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22';
 
 describe('Activity Definition Contracts', () => {
+  it('rejects an inverted age range', () => {
+    expect(() => createActivityDefinitionSchema.parse({
+      code: 'TEST.AGE', name: 'Age range', ageMin: 17, ageMax: 10,
+    })).toThrow();
+  });
+
+  it.each([
+    { ageMin: 10, ageMax: 10 },
+    { ageMin: 10 },
+    { ageMax: 10 },
+    { ageMin: null, ageMax: null },
+  ])('accepts a valid or open age range %j', (range) => {
+    expect(createActivityDefinitionSchema.safeParse({
+      code: 'TEST.AGE', name: 'Age range', ...range,
+    }).success).toBe(true);
+  });
+
   it('validates a minimal activity with defaults', () => {
     const parsed = createActivityDefinitionSchema.parse({
       code: 'MUSIC.BASS.PRACTICE_SESSION',
