@@ -7,6 +7,7 @@ export * from './prayer.js';
 export * from './curriculum.js';
 export * from './curriculum-definitions.js';
 export * from './pedagogical-model-definition.js';
+export * from './curriculum-path-skill-definitions.js';
 export * from './lesson.js';
 export * from './schedule.js';
 export * from './record.js';
