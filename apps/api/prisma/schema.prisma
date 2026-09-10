@@ -1094,4 +1094,29 @@ model PedagogicalModelDefinition {
   @@map("pedagogical_model_definitions")
 }
 
+// Evidence type catalog (issue #96 section 9): the kinds of evidence a
+// portfolio item/activity submission can be (text, photo, video, audio,
+// file, certificate, observation) as data rows instead of a closed enum,
+// so a new evidence type is a data write, not a migration. The base 7 are
+// seeded (see evidence-type-definition.seed-data.ts in apps/api), but
+// nothing about this table hardcodes that list -- new PUBLISHED rows are
+// picked up generically by anything that reads from it.
+model EvidenceTypeDefinition {
+  id            String           @id @default(uuid()) @db.Uuid
+  code          String
+  version       Int              @default(1)
+  status        DefinitionStatus @default(DRAFT)
+  schemaVersion String           @default("1.0.0") @map("schema_version")
+  name          String
+  description   String?
+  metadata      Json             @default("{}")
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  publishedAt   DateTime?        @map("published_at") @db.Timestamptz
+  deprecatedAt  DateTime?        @map("deprecated_at") @db.Timestamptz
+
+  @@unique([code, version])
+  @@index([code])
+  @@index([status])
+  @@map("evidence_type_definitions")
+}
 

@@ -9,6 +9,7 @@ export * from './curriculum-definitions.js';
 export * from './pedagogical-model-definition.js';
 export * from './curriculum-path-skill-definitions.js';
 export * from './rubric-definition.js';
+export * from './evidence-type-definition.js';
 export * from './lesson.js';
 export * from './schedule.js';
 export * from './record.js';

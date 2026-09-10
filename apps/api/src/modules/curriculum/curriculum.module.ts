@@ -5,6 +5,7 @@ import { ObjectiveRepository } from './infrastructure/objective.repository.js';
 import { CurriculumTemplateEngine } from './infrastructure/curriculum-template.engine.js';
 import { PedagogicalModelDefinitionResolver } from './infrastructure/pedagogical-model-definition.resolver.js';
 import { PedagogicalModelDefinitionSeeder } from './infrastructure/pedagogical-model-definition.seeder.js';
+import { EvidenceTypeDefinitionSeeder } from './infrastructure/evidence-type-definition.seeder.js';
 import { DefinitionsRepository } from './infrastructure/definitions.repository.js';
 import { CurriculumService } from './application/curriculum.service.js';
 import { ObjectiveService } from './application/objective.service.js';
@@ -23,6 +24,7 @@ import { DefinitionsController } from './presentation/definitions.controller.js'
     CurriculumTemplateEngine,
     PedagogicalModelDefinitionResolver,
     PedagogicalModelDefinitionSeeder,
+    EvidenceTypeDefinitionSeeder,
     DefinitionsRepository,
     CurriculumService,
     ObjectiveService,
