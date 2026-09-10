@@ -104,6 +104,7 @@ describe('AuthService', () => {
           fullName: data.fullName,
           emailVerifiedAt: null,
           mfaEnabled: false,
+          isPlatformAdmin: false,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -122,6 +123,7 @@ describe('AuthService', () => {
                 fullName: user.fullName,
                 emailVerifiedAt: new Date(),
                 mfaEnabled: user.mfaEnabled,
+                isPlatformAdmin: user.isPlatformAdmin,
                 createdAt: user.createdAt,
                 updatedAt: user.updatedAt,
               }),
@@ -141,6 +143,7 @@ describe('AuthService', () => {
                 fullName: user.fullName,
                 emailVerifiedAt: user.emailVerifiedAt,
                 mfaEnabled: user.mfaEnabled,
+                isPlatformAdmin: user.isPlatformAdmin,
                 createdAt: user.createdAt,
                 updatedAt: user.updatedAt,
               }),
@@ -165,10 +168,31 @@ describe('AuthService', () => {
               fullName: user.fullName,
               emailVerifiedAt: null,
               mfaEnabled: user.mfaEnabled,
+              isPlatformAdmin: user.isPlatformAdmin,
               createdAt: user.createdAt,
               updatedAt: user.updatedAt,
             }),
           );
+        }
+      },
+      grantPlatformAdmin: async (id: string) => {
+        for (const [email, user] of fakeUsers.entries()) {
+          if (user.id === id) {
+            fakeUsers.set(
+              email,
+              new UserEntity({
+                id: user.id,
+                email: user.email,
+                passwordHash: user.passwordHash,
+                fullName: user.fullName,
+                emailVerifiedAt: user.emailVerifiedAt,
+                mfaEnabled: user.mfaEnabled,
+                isPlatformAdmin: true,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt,
+              }),
+            );
+          }
         }
       },
     } as unknown as UserRepository;
@@ -275,7 +299,10 @@ describe('AuthService', () => {
       },
     };
 
-    environment = { webOrigin: 'http://localhost:3000' } as Environment;
+    environment = {
+      webOrigin: 'http://localhost:3000',
+      platformAdminEmails: [] as string[],
+    } as unknown as Environment;
 
     fakeSetupChallenges = new Map();
     fakeLoginChallenges = new Map();
@@ -294,6 +321,7 @@ describe('AuthService', () => {
           fullName: user.fullName,
           emailVerifiedAt: user.emailVerifiedAt,
           mfaEnabled,
+          isPlatformAdmin: user.isPlatformAdmin,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
         }),
@@ -1231,6 +1259,65 @@ describe('AuthService', () => {
       }
 
       expect(fakeLoginChallenges.size).toBe(0);
+    });
+  });
+
+  describe('platform-admin bootstrap (issue #101)', () => {
+    it('promotes a matching email on register', async () => {
+      environment.platformAdminEmails = ['admin@example.com'];
+
+      const result = await authService.register({
+        email: 'admin@example.com',
+        fullName: 'Admin User',
+        password: 'password12345',
+      });
+      expectAuthSession(result);
+
+      await expect(authService.isPlatformAdmin(result.user.id)).resolves.toBe(true);
+    });
+
+    it('does not promote an email that is not in the list', async () => {
+      environment.platformAdminEmails = ['someone-else@example.com'];
+
+      const result = await authService.register({
+        email: 'parent@example.com',
+        fullName: 'Parent User',
+        password: 'password12345',
+      });
+      expectAuthSession(result);
+
+      await expect(authService.isPlatformAdmin(result.user.id)).resolves.toBe(false);
+    });
+
+    it('promotes an existing user at login time once added to the list', async () => {
+      const registered = await authService.register({
+        email: 'later-admin@example.com',
+        fullName: 'Later Admin',
+        password: 'password12345',
+      });
+      expectAuthSession(registered);
+      await expect(authService.isPlatformAdmin(registered.user.id)).resolves.toBe(false);
+
+      environment.platformAdminEmails = ['later-admin@example.com'];
+      await authService.login({ email: 'later-admin@example.com', password: 'password12345' });
+
+      await expect(authService.isPlatformAdmin(registered.user.id)).resolves.toBe(true);
+    });
+
+    it('never auto-demotes once promoted, even if removed from the list', async () => {
+      environment.platformAdminEmails = ['sticky-admin@example.com'];
+      const result = await authService.register({
+        email: 'sticky-admin@example.com',
+        fullName: 'Sticky Admin',
+        password: 'password12345',
+      });
+      expectAuthSession(result);
+      await expect(authService.isPlatformAdmin(result.user.id)).resolves.toBe(true);
+
+      environment.platformAdminEmails = [];
+      await authService.login({ email: 'sticky-admin@example.com', password: 'password12345' });
+
+      await expect(authService.isPlatformAdmin(result.user.id)).resolves.toBe(true);
     });
   });
 });

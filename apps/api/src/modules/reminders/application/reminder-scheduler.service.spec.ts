@@ -47,9 +47,7 @@ describe('ReminderSchedulerService', () => {
     familyApi = {
       isGuardianInFamily: jest.fn().mockResolvedValue(true),
       getFamilyForUser: jest.fn().mockResolvedValue(null),
-      getFamilyMemberUserIds: jest.fn().mockResolvedValue(['user-1', 'user-2']),
-      isGuardianAnywhere: jest.fn().mockResolvedValue(true),
-    };
+      getFamilyMemberUserIds: jest.fn().mockResolvedValue(['user-1', 'user-2']),    };
     learnersApi = {
       findLearnerById: jest.fn(),
       listActiveLearners: jest.fn().mockResolvedValue([]),

@@ -20,6 +20,7 @@ import type {
   UserSummaryDto,
 } from '@aletheia/contracts';
 import { PasswordPolicy } from '../domain/password-policy.js';
+import type { UserEntity } from '../domain/user.entity.js';
 import { PasswordHasher } from './password.hasher.js';
 import { UserRepository } from '../infrastructure/user.repository.js';
 import { RefreshTokenRepository } from '../infrastructure/refresh-token.repository.js';
@@ -101,6 +102,7 @@ export class AuthService implements IdentityPublicApi {
     });
 
     await this.sendVerificationEmail(user.id, user.email, user.fullName);
+    await this.syncPlatformAdminBootstrap(user);
 
     return this.issueSession(user.id, user.email, user.toDto());
   }
@@ -116,6 +118,8 @@ export class AuthService implements IdentityPublicApi {
       await this.recordAuditEvent(user.id, 'LOGIN_FAILED');
       throw new UnauthorizedException('Invalid email or password.');
     }
+
+    await this.syncPlatformAdminBootstrap(user);
 
     if (user.mfaEnabled) {
       const challenge = await this.mfaLoginChallengeRepository.issue(user.id);
@@ -464,6 +468,23 @@ export class AuthService implements IdentityPublicApi {
   async findUserById(userId: string): Promise<UserSummaryDto | null> {
     const user = await this.userRepository.findById(userId);
     return user ? user.toDto() : null;
+  }
+
+  async isPlatformAdmin(userId: string): Promise<boolean> {
+    const user = await this.userRepository.findById(userId);
+    return user?.isPlatformAdmin ?? false;
+  }
+
+  // Platform-admin bootstrap (issue #101): promotes a user whose email is
+  // in PLATFORM_ADMIN_EMAILS, if not already flagged. Called on register
+  // and login so both a brand-new signup and an existing account added to
+  // the list later both get promoted without a separate step. Deliberately
+  // one-way -- removing an email from the list never demotes anyone; that
+  // needs a manual/future-admin-UI action.
+  private async syncPlatformAdminBootstrap(user: UserEntity): Promise<void> {
+    if (user.isPlatformAdmin) return;
+    if (!this.environment.platformAdminEmails.includes(user.email.toLowerCase())) return;
+    await this.userRepository.grantPlatformAdmin(user.id);
   }
 
   private async issueSession(
