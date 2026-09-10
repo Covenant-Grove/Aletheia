@@ -195,6 +195,39 @@ describe('Curriculum Web Components', () => {
 
       expect(applyMock).toHaveBeenCalledWith('CHARLOTTE_MASON');
     });
+
+    it('renders the expanded set of pedagogical framework options', () => {
+      render(
+        <TemplateModal
+          isOpen={true}
+          onClose={vi.fn()}
+          onApply={vi.fn().mockResolvedValue(undefined)}
+        />
+      );
+
+      expect(screen.getByTestId('template-option-UNIT_STUDIES')).toBeInTheDocument();
+      expect(screen.getByTestId('template-option-MONTESSORI')).toBeInTheDocument();
+      expect(screen.getByTestId('template-option-PROJECT_BASED')).toBeInTheDocument();
+      expect(screen.getByTestId('template-option-GUIDED_UNSCHOOLING')).toBeInTheDocument();
+      expect(screen.getByTestId('template-option-ECLECTIC')).toBeInTheDocument();
+    });
+
+    it('allows selecting and applying a newly added framework', async () => {
+      const applyMock = vi.fn().mockResolvedValue(undefined);
+
+      render(
+        <TemplateModal
+          isOpen={true}
+          onClose={vi.fn()}
+          onApply={applyMock}
+        />
+      );
+
+      fireEvent.click(screen.getByTestId('template-option-MONTESSORI'));
+      fireEvent.click(screen.getByTestId('apply-template-btn'));
+
+      expect(applyMock).toHaveBeenCalledWith('MONTESSORI');
+    });
   });
 });
 

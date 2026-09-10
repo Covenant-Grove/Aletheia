@@ -42,6 +42,36 @@ export function TemplateModal({ isOpen, onClose, onApply }: TemplateModalProps) 
       desc: 'Disciplinas fundamentais organizadas: Português, Matemática, História, Geografia e Ciências Naturais.',
       icon: <AletheiaIcon name="book-open" size={18} style={{ color: 'var(--color-amber-600)' }} />,
     },
+    {
+      id: 'UNIT_STUDIES',
+      title: 'Unit Studies (Estudo por Temas)',
+      desc: 'Um tema central explorado de forma interdisciplinar: literatura, matemática, ciências e história conectados ao mesmo assunto.',
+      icon: <AletheiaIcon name="layers" size={18} style={{ color: 'var(--color-indigo-700)' }} />,
+    },
+    {
+      id: 'MONTESSORI',
+      title: 'Montessori',
+      desc: 'Vida Prática, Educação Sensorial, Linguagem, Matemática Concreta e Educação Cósmica através de materiais manipuláveis e autonomia.',
+      icon: <AletheiaIcon name="compass" size={18} style={{ color: 'var(--color-emerald-600)' }} />,
+    },
+    {
+      id: 'PROJECT_BASED',
+      title: 'Aprendizagem por Projetos',
+      desc: 'Um projeto real conduz o aprendizado: pesquisa, comunicação e disciplinas aplicadas ao problema em andamento.',
+      icon: <AletheiaIcon name="lightbulb" size={18} style={{ color: 'var(--color-amber-600)' }} />,
+    },
+    {
+      id: 'GUIDED_UNSCHOOLING',
+      title: 'Unschooling Guiado',
+      desc: 'Interesses e curiosidades do próprio aluno conduzem o aprendizado, com acompanhamento e mediação ativa dos pais.',
+      icon: <AletheiaIcon name="sparkles" size={18} style={{ color: 'var(--color-rose-600)' }} />,
+    },
+    {
+      id: 'ECLECTIC',
+      title: 'Eclético',
+      desc: 'Combina livremente métodos e materiais de diferentes abordagens, ajustando-se ao que funciona melhor para o aluno.',
+      icon: <AletheiaIcon name="palette" size={18} style={{ color: 'var(--color-indigo-700)' }} />,
+    },
   ];
 
   return (
@@ -49,7 +79,7 @@ export function TemplateModal({ isOpen, onClose, onApply }: TemplateModalProps) 
       isOpen={isOpen}
       onClose={onClose}
       title="Aplicar Modelo Pedagógico"
-      description="Escolha uma abordagem para gerar disciplinas sugeridas e objetivos de aprendizagem iniciais:"
+      description="Escolha uma abordagem para gerar disciplinas sugeridas e objetivos de aprendizagem iniciais. Todas as opções incluem também Artes/Ofícios/Vocação, Fé e Teologia, e Vida Prática e Resiliência:"
       maxWidth="lg"
       footer={
         <>

@@ -5,6 +5,10 @@ export const pedagogicalFrameworkSchema = z.enum([
   'CHARLOTTE_MASON',
   'TRADITIONAL',
   'UNIT_STUDIES',
+  'MONTESSORI',
+  'PROJECT_BASED',
+  'GUIDED_UNSCHOOLING',
+  'ECLECTIC',
   'CUSTOM',
 ]);
 
