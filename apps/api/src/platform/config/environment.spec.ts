@@ -281,6 +281,7 @@ describe('parseEnvironment', () => {
       'DATABASE_URL',
       'JWT_SECRET',
       'LEARNER_SESSION_JWT_SECRET',
+      'MFA_ENCRYPTION_KEY',
       'REDIS_URL',
       'S3_ENDPOINT',
       'S3_ACCESS_KEY',
@@ -296,7 +297,8 @@ describe('parseEnvironment', () => {
       'postgresql://user:pass@localhost:5432/aletheia';
     process.env.JWT_SECRET = validJwtSecret;
     process.env.LEARNER_SESSION_JWT_SECRET = validLearnerJwtSecret;
-    for (const name of variableNames.slice(4)) {
+    process.env.MFA_ENCRYPTION_KEY = validMfaEncryptionKey;
+    for (const name of variableNames.slice(5)) {
       delete process.env[name];
     }
 

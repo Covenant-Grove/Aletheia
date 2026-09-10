@@ -6,6 +6,17 @@ import {
   createPedagogicalModelDefinitionSchema,
   createLearningPathSchema,
   createSkillDefinitionSchema,
+  createRubricDefinitionSchema,
+  createRubricCriterionSchema,
+  createEvidenceTypeDefinitionSchema,
+  createCurriculumDefinitionSchema,
+  addCurriculumDefinitionDomainSchema,
+  addCurriculumDefinitionCompetencySchema,
+  addCurriculumDefinitionRubricSchema,
+  addCurriculumDefinitionActivitySchema,
+  createActivityDefinitionSchema,
+  addActivityDefinitionCompetencySchema,
+  addActivityDefinitionEvidenceTypeSchema,
   transitionDefinitionStatusSchema,
   type CreateLearningDomainOutput,
   type LearningDomainResponseDto,
@@ -17,6 +28,28 @@ import {
   type LearningPathResponseDto,
   type CreateSkillDefinitionOutput,
   type SkillDefinitionResponseDto,
+  type CreateRubricDefinitionOutput,
+  type RubricDefinitionResponseDto,
+  type CreateRubricCriterionOutput,
+  type RubricCriterionResponseDto,
+  type CreateEvidenceTypeDefinitionOutput,
+  type EvidenceTypeDefinitionResponseDto,
+  type CreateCurriculumDefinitionOutput,
+  type CurriculumDefinitionResponseDto,
+  type AddCurriculumDefinitionDomainOutput,
+  type CurriculumDefinitionDomainResponseDto,
+  type AddCurriculumDefinitionCompetencyOutput,
+  type CurriculumDefinitionCompetencyResponseDto,
+  type AddCurriculumDefinitionRubricOutput,
+  type CurriculumDefinitionRubricResponseDto,
+  type AddCurriculumDefinitionActivityOutput,
+  type CurriculumDefinitionActivityResponseDto,
+  type CreateActivityDefinitionOutput,
+  type ActivityDefinitionResponseDto,
+  type AddActivityDefinitionCompetencyOutput,
+  type ActivityDefinitionCompetencyResponseDto,
+  type AddActivityDefinitionEvidenceTypeOutput,
+  type ActivityDefinitionEvidenceTypeResponseDto,
   type TransitionDefinitionStatusDto,
 } from '@aletheia/contracts';
 import { JwtAuthGuard, PlatformAdminGuard } from '../../../platform/auth/index.js';
@@ -160,5 +193,231 @@ export class DefinitionsController {
     @Body(new ZodValidationPipe(transitionDefinitionStatusSchema)) dto: TransitionDefinitionStatusDto,
   ): Promise<SkillDefinitionResponseDto> {
     return this.definitionsService.transitionSkillDefinitionStatus(id, dto.status);
+  }
+
+  // Rubric Definitions
+  @Post('rubric-definitions')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a rubric definition' })
+  async createRubricDefinition(
+    @Body(new ZodValidationPipe(createRubricDefinitionSchema)) dto: CreateRubricDefinitionOutput,
+  ): Promise<RubricDefinitionResponseDto> {
+    return this.definitionsService.createRubricDefinition(dto);
+  }
+
+  @Get('rubric-definitions')
+  @ApiOperation({ summary: 'List rubric definitions' })
+  async listRubricDefinitions(): Promise<RubricDefinitionResponseDto[]> {
+    return this.definitionsService.listRubricDefinitions();
+  }
+
+  @Patch('rubric-definitions/:id/status')
+  @ApiOperation({ summary: 'Transition a rubric definition status' })
+  async transitionRubricDefinitionStatus(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(transitionDefinitionStatusSchema)) dto: TransitionDefinitionStatusDto,
+  ): Promise<RubricDefinitionResponseDto> {
+    return this.definitionsService.transitionRubricDefinitionStatus(id, dto.status);
+  }
+
+  @Post('rubric-definitions/:rubricId/criteria')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Add a criterion to a rubric definition' })
+  async createRubricCriterion(
+    @Param('rubricId') rubricId: string,
+    @Body(new ZodValidationPipe(createRubricCriterionSchema)) dto: CreateRubricCriterionOutput,
+  ): Promise<RubricCriterionResponseDto> {
+    return this.definitionsService.createRubricCriterion(rubricId, dto);
+  }
+
+  @Get('rubric-definitions/:rubricId/criteria')
+  @ApiOperation({ summary: 'List criteria for a rubric definition' })
+  async listRubricCriteria(@Param('rubricId') rubricId: string): Promise<RubricCriterionResponseDto[]> {
+    return this.definitionsService.listRubricCriteria(rubricId);
+  }
+
+  // Evidence Type Definitions
+  @Post('evidence-type-definitions')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create an evidence type definition' })
+  async createEvidenceTypeDefinition(
+    @Body(new ZodValidationPipe(createEvidenceTypeDefinitionSchema)) dto: CreateEvidenceTypeDefinitionOutput,
+  ): Promise<EvidenceTypeDefinitionResponseDto> {
+    return this.definitionsService.createEvidenceTypeDefinition(dto);
+  }
+
+  @Get('evidence-type-definitions')
+  @ApiOperation({ summary: 'List evidence type definitions' })
+  async listEvidenceTypeDefinitions(): Promise<EvidenceTypeDefinitionResponseDto[]> {
+    return this.definitionsService.listEvidenceTypeDefinitions();
+  }
+
+  @Patch('evidence-type-definitions/:id/status')
+  @ApiOperation({ summary: 'Transition an evidence type definition status' })
+  async transitionEvidenceTypeDefinitionStatus(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(transitionDefinitionStatusSchema)) dto: TransitionDefinitionStatusDto,
+  ): Promise<EvidenceTypeDefinitionResponseDto> {
+    return this.definitionsService.transitionEvidenceTypeDefinitionStatus(id, dto.status);
+  }
+
+  // Curriculum Definitions
+  @Post('curriculum-definitions')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a curriculum definition' })
+  async createCurriculumDefinition(
+    @Body(new ZodValidationPipe(createCurriculumDefinitionSchema)) dto: CreateCurriculumDefinitionOutput,
+  ): Promise<CurriculumDefinitionResponseDto> {
+    return this.definitionsService.createCurriculumDefinition(dto);
+  }
+
+  @Get('curriculum-definitions')
+  @ApiOperation({ summary: 'List curriculum definitions' })
+  async listCurriculumDefinitions(): Promise<CurriculumDefinitionResponseDto[]> {
+    return this.definitionsService.listCurriculumDefinitions();
+  }
+
+  @Patch('curriculum-definitions/:id/status')
+  @ApiOperation({ summary: 'Transition a curriculum definition status' })
+  async transitionCurriculumDefinitionStatus(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(transitionDefinitionStatusSchema)) dto: TransitionDefinitionStatusDto,
+  ): Promise<CurriculumDefinitionResponseDto> {
+    return this.definitionsService.transitionCurriculumDefinitionStatus(id, dto.status);
+  }
+
+  @Post('curriculum-definitions/:curriculumId/domains')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Link a learning domain to a curriculum definition' })
+  async addCurriculumDefinitionDomain(
+    @Param('curriculumId') curriculumId: string,
+    @Body(new ZodValidationPipe(addCurriculumDefinitionDomainSchema)) dto: AddCurriculumDefinitionDomainOutput,
+  ): Promise<CurriculumDefinitionDomainResponseDto> {
+    return this.definitionsService.addCurriculumDefinitionDomain(curriculumId, dto);
+  }
+
+  @Get('curriculum-definitions/:curriculumId/domains')
+  @ApiOperation({ summary: 'List learning domains linked to a curriculum definition' })
+  async listCurriculumDefinitionDomains(
+    @Param('curriculumId') curriculumId: string,
+  ): Promise<CurriculumDefinitionDomainResponseDto[]> {
+    return this.definitionsService.listCurriculumDefinitionDomains(curriculumId);
+  }
+
+  @Post('curriculum-definitions/:curriculumId/competencies')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Link a competency definition to a curriculum definition' })
+  async addCurriculumDefinitionCompetency(
+    @Param('curriculumId') curriculumId: string,
+    @Body(new ZodValidationPipe(addCurriculumDefinitionCompetencySchema))
+    dto: AddCurriculumDefinitionCompetencyOutput,
+  ): Promise<CurriculumDefinitionCompetencyResponseDto> {
+    return this.definitionsService.addCurriculumDefinitionCompetency(curriculumId, dto);
+  }
+
+  @Get('curriculum-definitions/:curriculumId/competencies')
+  @ApiOperation({ summary: 'List competency definitions linked to a curriculum definition' })
+  async listCurriculumDefinitionCompetencies(
+    @Param('curriculumId') curriculumId: string,
+  ): Promise<CurriculumDefinitionCompetencyResponseDto[]> {
+    return this.definitionsService.listCurriculumDefinitionCompetencies(curriculumId);
+  }
+
+  @Post('curriculum-definitions/:curriculumId/rubrics')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Link a rubric definition to a curriculum definition' })
+  async addCurriculumDefinitionRubric(
+    @Param('curriculumId') curriculumId: string,
+    @Body(new ZodValidationPipe(addCurriculumDefinitionRubricSchema)) dto: AddCurriculumDefinitionRubricOutput,
+  ): Promise<CurriculumDefinitionRubricResponseDto> {
+    return this.definitionsService.addCurriculumDefinitionRubric(curriculumId, dto);
+  }
+
+  @Get('curriculum-definitions/:curriculumId/rubrics')
+  @ApiOperation({ summary: 'List rubric definitions linked to a curriculum definition' })
+  async listCurriculumDefinitionRubrics(
+    @Param('curriculumId') curriculumId: string,
+  ): Promise<CurriculumDefinitionRubricResponseDto[]> {
+    return this.definitionsService.listCurriculumDefinitionRubrics(curriculumId);
+  }
+
+  @Post('curriculum-definitions/:curriculumId/activities')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Link an activity definition to a curriculum definition' })
+  async addCurriculumDefinitionActivity(
+    @Param('curriculumId') curriculumId: string,
+    @Body(new ZodValidationPipe(addCurriculumDefinitionActivitySchema)) dto: AddCurriculumDefinitionActivityOutput,
+  ): Promise<CurriculumDefinitionActivityResponseDto> {
+    return this.definitionsService.addCurriculumDefinitionActivity(curriculumId, dto);
+  }
+
+  @Get('curriculum-definitions/:curriculumId/activities')
+  @ApiOperation({ summary: 'List activity definitions linked to a curriculum definition' })
+  async listCurriculumDefinitionActivities(
+    @Param('curriculumId') curriculumId: string,
+  ): Promise<CurriculumDefinitionActivityResponseDto[]> {
+    return this.definitionsService.listCurriculumDefinitionActivities(curriculumId);
+  }
+
+  // Activity Definitions
+  @Post('activity-definitions')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create an activity definition' })
+  async createActivityDefinition(
+    @Body(new ZodValidationPipe(createActivityDefinitionSchema)) dto: CreateActivityDefinitionOutput,
+  ): Promise<ActivityDefinitionResponseDto> {
+    return this.definitionsService.createActivityDefinition(dto);
+  }
+
+  @Get('activity-definitions')
+  @ApiOperation({ summary: 'List activity definitions' })
+  async listActivityDefinitions(): Promise<ActivityDefinitionResponseDto[]> {
+    return this.definitionsService.listActivityDefinitions();
+  }
+
+  @Patch('activity-definitions/:id/status')
+  @ApiOperation({ summary: 'Transition an activity definition status' })
+  async transitionActivityDefinitionStatus(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(transitionDefinitionStatusSchema)) dto: TransitionDefinitionStatusDto,
+  ): Promise<ActivityDefinitionResponseDto> {
+    return this.definitionsService.transitionActivityDefinitionStatus(id, dto.status);
+  }
+
+  @Post('activity-definitions/:activityId/competencies')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Link a competency definition to an activity definition' })
+  async addActivityDefinitionCompetency(
+    @Param('activityId') activityId: string,
+    @Body(new ZodValidationPipe(addActivityDefinitionCompetencySchema)) dto: AddActivityDefinitionCompetencyOutput,
+  ): Promise<ActivityDefinitionCompetencyResponseDto> {
+    return this.definitionsService.addActivityDefinitionCompetency(activityId, dto);
+  }
+
+  @Get('activity-definitions/:activityId/competencies')
+  @ApiOperation({ summary: 'List competency definitions linked to an activity definition' })
+  async listActivityDefinitionCompetencies(
+    @Param('activityId') activityId: string,
+  ): Promise<ActivityDefinitionCompetencyResponseDto[]> {
+    return this.definitionsService.listActivityDefinitionCompetencies(activityId);
+  }
+
+  @Post('activity-definitions/:activityId/evidence-types')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Link an evidence type definition to an activity definition' })
+  async addActivityDefinitionEvidenceType(
+    @Param('activityId') activityId: string,
+    @Body(new ZodValidationPipe(addActivityDefinitionEvidenceTypeSchema))
+    dto: AddActivityDefinitionEvidenceTypeOutput,
+  ): Promise<ActivityDefinitionEvidenceTypeResponseDto> {
+    return this.definitionsService.addActivityDefinitionEvidenceType(activityId, dto);
+  }
+
+  @Get('activity-definitions/:activityId/evidence-types')
+  @ApiOperation({ summary: 'List evidence type definitions linked to an activity definition' })
+  async listActivityDefinitionEvidenceTypes(
+    @Param('activityId') activityId: string,
+  ): Promise<ActivityDefinitionEvidenceTypeResponseDto[]> {
+    return this.definitionsService.listActivityDefinitionEvidenceTypes(activityId);
   }
 }
