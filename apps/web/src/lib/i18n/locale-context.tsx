@@ -106,11 +106,10 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const t = useCallback(
     (key: string, vars?: Record<string, string | number>): string => {
       const dictionary = DICTIONARIES[locale];
-      const value = readDotPath(dictionary, key) ?? readDotPath(ptBR, key);
-      if (value === undefined) {
-        console.warn(`[i18n] Missing translation key: ${key}`);
-        return key;
-      }
+      // No console usage in this codebase's frontend -- a missing key
+      // falls back to itself silently rather than logging, same as the
+      // fallback-to-pt-BR lookup right above it.
+      const value = readDotPath(dictionary, key) ?? readDotPath(ptBR, key) ?? key;
       return interpolate(value, vars);
     },
     [locale],

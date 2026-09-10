@@ -1,5 +1,5 @@
 import React from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { LocaleProvider, useLocale } from '../src/lib/i18n/locale-context';
 
@@ -21,9 +21,7 @@ describe('i18n', () => {
     expect(screen.getByTestId('probe')).toHaveTextContent('Início');
   });
 
-  it('falls back to the key itself (and warns) instead of throwing on a missing key', () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
+  it('falls back to the key itself instead of throwing on a missing key', () => {
     render(
       <LocaleProvider>
         <Probe translationKey="nonexistent.key" />
@@ -31,9 +29,6 @@ describe('i18n', () => {
     );
 
     expect(screen.getByTestId('probe')).toHaveTextContent('nonexistent.key');
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('nonexistent.key'));
-
-    warnSpy.mockRestore();
   });
 
   it('does not throw when used outside a LocaleProvider (component tests render bare trees)', () => {
