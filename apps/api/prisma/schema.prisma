@@ -918,6 +918,7 @@ model LearningDomain {
   parent        LearningDomain?        @relation("LearningDomainHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children      LearningDomain[]       @relation("LearningDomainHierarchy")
   competencies  CompetencyDefinition[]
+  learningPaths LearningPath[]
 
   @@unique([code, version])
   @@index([code])
@@ -933,6 +934,7 @@ model CompetencyDefinition {
   status        DefinitionStatus @default(DRAFT)
   schemaVersion String           @default("1.0.0") @map("schema_version")
   domainId      String           @map("domain_id") @db.Uuid
+  pathId        String?          @map("path_id") @db.Uuid
   title         String
   level         Int?
   metadata      Json             @default("{}")
@@ -941,12 +943,69 @@ model CompetencyDefinition {
   deprecatedAt  DateTime?        @map("deprecated_at") @db.Timestamptz
 
   domain        LearningDomain   @relation(fields: [domainId], references: [id], onDelete: Restrict)
+  path          LearningPath?    @relation(fields: [pathId], references: [id], onDelete: SetNull)
+  skills        SkillDefinition[]
+
+  @@unique([code, version])
+  @@index([code])
+  @@index([domainId])
+  @@index([pathId])
+  @@index([status])
+  @@map("competency_definitions")
+}
+
+// Learning path: belongs to a domain, can hold many competencies (issue
+// #96 section 4). Same Definition/Version shape as everything else here.
+model LearningPath {
+  id            String                 @id @default(uuid()) @db.Uuid
+  code          String
+  version       Int                    @default(1)
+  status        DefinitionStatus       @default(DRAFT)
+  schemaVersion String                 @default("1.0.0") @map("schema_version")
+  domainId      String                 @map("domain_id") @db.Uuid
+  name          String
+  description   String?
+  metadata      Json                   @default("{}")
+  createdAt     DateTime               @default(now()) @map("created_at") @db.Timestamptz
+  publishedAt   DateTime?              @map("published_at") @db.Timestamptz
+  deprecatedAt  DateTime?              @map("deprecated_at") @db.Timestamptz
+
+  domain        LearningDomain         @relation(fields: [domainId], references: [id], onDelete: Restrict)
+  competencies  CompetencyDefinition[]
 
   @@unique([code, version])
   @@index([code])
   @@index([domainId])
   @@index([status])
-  @@map("competency_definitions")
+  @@map("learning_paths")
+}
+
+// Skill definition: belongs to a competency (issue #96 section 6).
+// `metadata.dependencies` holds other skill codes rather than a relational
+// join table for this first slice -- kept extensible/JSONB per the
+// "relational for identity, JSONB for extensible properties" rule since
+// skill-to-skill prerequisite graphs aren't load-bearing for anything yet.
+model SkillDefinition {
+  id            String               @id @default(uuid()) @db.Uuid
+  code          String
+  version       Int                  @default(1)
+  status        DefinitionStatus     @default(DRAFT)
+  schemaVersion String               @default("1.0.0") @map("schema_version")
+  competencyId  String               @map("competency_id") @db.Uuid
+  title         String
+  order         Int                  @default(0)
+  metadata      Json                 @default("{}")
+  createdAt     DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  publishedAt   DateTime?            @map("published_at") @db.Timestamptz
+  deprecatedAt  DateTime?            @map("deprecated_at") @db.Timestamptz
+
+  competency    CompetencyDefinition @relation(fields: [competencyId], references: [id], onDelete: Restrict)
+
+  @@unique([code, version])
+  @@index([code])
+  @@index([competencyId])
+  @@index([status])
+  @@map("skill_definitions")
 }
 
 // Pedagogical model definition (framework), same Definition/Version shape.
