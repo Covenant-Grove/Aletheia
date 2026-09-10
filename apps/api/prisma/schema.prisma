@@ -953,6 +953,7 @@ model CompetencyDefinition {
   skills        SkillDefinition[]
   rubrics       RubricDefinition[]
   curriculumLinks CurriculumDefinitionCompetency[]
+  activityLinks ActivityDefinitionCompetency[]
 
   @@unique([code, version])
   @@index([code])
@@ -1119,6 +1120,8 @@ model EvidenceTypeDefinition {
   publishedAt   DateTime?        @map("published_at") @db.Timestamptz
   deprecatedAt  DateTime?        @map("deprecated_at") @db.Timestamptz
 
+  activityLinks ActivityDefinitionEvidenceType[]
+
   @@unique([code, version])
   @@index([code])
   @@index([status])
@@ -1157,6 +1160,7 @@ model CurriculumDefinition {
   domains       CurriculumDefinitionDomain[]
   competencies  CurriculumDefinitionCompetency[]
   rubrics       CurriculumDefinitionRubric[]
+  activities    CurriculumDefinitionActivity[]
 
   @@unique([code, version])
   @@index([code])
@@ -1212,5 +1216,95 @@ model CurriculumDefinitionRubric {
   @@index([curriculumDefinitionId])
   @@index([rubricId])
   @@map("curriculum_definition_rubrics")
+}
+
+model CurriculumDefinitionActivity {
+  id                     String   @id @default(uuid()) @db.Uuid
+  curriculumDefinitionId String   @map("curriculum_definition_id") @db.Uuid
+  activityId             String   @map("activity_id") @db.Uuid
+  required               Boolean  @default(true)
+  order                  Int      @default(0)
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  curriculumDefinition CurriculumDefinition @relation(fields: [curriculumDefinitionId], references: [id], onDelete: Cascade)
+  activity             ActivityDefinition   @relation(fields: [activityId], references: [id], onDelete: Restrict)
+
+  @@unique([curriculumDefinitionId, activityId])
+  @@index([curriculumDefinitionId])
+  @@index([activityId])
+  @@map("curriculum_definition_activities")
+}
+
+// Activity definition (issue #96 section 7): a reusable, versioned
+// learning activity -- not owned by any one curriculum. Competencies it
+// validates are a real join table (ActivityDefinitionCompetency), same
+// discipline as CurriculumDefinition's joins -- not a JSON array of IDs.
+// Required evidence is a join to the EvidenceTypeDefinition catalog
+// (ActivityDefinitionEvidenceType) rather than duplicating that catalog
+// here. `evidenceRequirementMode` (ANY/ALL) describes how the linked
+// evidence types combine -- an activity can require *one of several*
+// accepted types (ANY, e.g. "a photo OR a video") or *all* of them (ALL,
+// e.g. "a video AND a mentor observation"). This is a fixed structural
+// operator, not domain content, so unlike evidence types themselves it's
+// safe as a small closed set rather than a free string.
+model ActivityDefinition {
+  id            String           @id @default(uuid()) @db.Uuid
+  code          String
+  version       Int              @default(1)
+  status        DefinitionStatus @default(DRAFT)
+  schemaVersion String           @default("1.0.0") @map("schema_version")
+  name          String
+  description   String?
+  ageMin        Int?             @map("age_min")
+  ageMax        Int?             @map("age_max")
+  estimatedDurationMinutes Int?  @map("estimated_duration_minutes")
+  supervisionRequired Boolean    @default(false) @map("supervision_required")
+  riskLevel     String?          @map("risk_level")
+  evidenceRequirementMode String @default("ANY") @map("evidence_requirement_mode")
+  metadata      Json             @default("{}")
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  publishedAt   DateTime?        @map("published_at") @db.Timestamptz
+  deprecatedAt  DateTime?        @map("deprecated_at") @db.Timestamptz
+
+  competencies  ActivityDefinitionCompetency[]
+  evidenceTypes ActivityDefinitionEvidenceType[]
+  curriculumLinks CurriculumDefinitionActivity[]
+
+  @@unique([code, version])
+  @@index([code])
+  @@index([status])
+  @@map("activity_definitions")
+}
+
+model ActivityDefinitionCompetency {
+  id           String   @id @default(uuid()) @db.Uuid
+  activityId   String   @map("activity_id") @db.Uuid
+  competencyId String   @map("competency_id") @db.Uuid
+  required     Boolean  @default(true)
+  order        Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  activity   ActivityDefinition   @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  competency CompetencyDefinition @relation(fields: [competencyId], references: [id], onDelete: Restrict)
+
+  @@unique([activityId, competencyId])
+  @@index([activityId])
+  @@index([competencyId])
+  @@map("activity_definition_competencies")
+}
+
+model ActivityDefinitionEvidenceType {
+  id             String   @id @default(uuid()) @db.Uuid
+  activityId     String   @map("activity_id") @db.Uuid
+  evidenceTypeId String   @map("evidence_type_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  activity     ActivityDefinition     @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  evidenceType EvidenceTypeDefinition @relation(fields: [evidenceTypeId], references: [id], onDelete: Restrict)
+
+  @@unique([activityId, evidenceTypeId])
+  @@index([activityId])
+  @@index([evidenceTypeId])
+  @@map("activity_definition_evidence_types")
 }
 

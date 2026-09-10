@@ -1,0 +1,65 @@
+import { describe, expect, it } from 'vitest';
+import {
+  createActivityDefinitionSchema,
+  addActivityDefinitionCompetencySchema,
+  addActivityDefinitionEvidenceTypeSchema,
+} from './activity-definition.js';
+
+const COMPETENCY_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+const EVIDENCE_TYPE_ID = 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22';
+
+describe('Activity Definition Contracts', () => {
+  it('validates a minimal activity with defaults', () => {
+    const parsed = createActivityDefinitionSchema.parse({
+      code: 'MUSIC.BASS.PRACTICE_SESSION',
+      name: 'Sessão de prática de contrabaixo',
+    });
+    expect(parsed.status).toBe('DRAFT');
+    expect(parsed.supervisionRequired).toBe(false);
+    expect(parsed.evidenceRequirementMode).toBe('ANY');
+  });
+
+  it('validates an activity with full fields', () => {
+    const parsed = createActivityDefinitionSchema.parse({
+      code: 'OUTDOOR.FIRE_SAFETY.CAMPFIRE_BUILD',
+      name: 'Construir uma fogueira com segurança',
+      ageMin: 10,
+      ageMax: 17,
+      estimatedDurationMinutes: 45,
+      supervisionRequired: true,
+      riskLevel: 'medium',
+      evidenceRequirementMode: 'ALL',
+      metadata: { materials: ['fósforos', 'lenha', 'balde de água'] },
+    });
+    expect(parsed.supervisionRequired).toBe(true);
+    expect(parsed.evidenceRequirementMode).toBe('ALL');
+    expect(parsed.metadata.materials).toEqual(['fósforos', 'lenha', 'balde de água']);
+  });
+
+  it('rejects an invalid evidenceRequirementMode', () => {
+    expect(() =>
+      createActivityDefinitionSchema.parse({
+        code: 'MUSIC.BASS.PRACTICE_SESSION',
+        name: 'x',
+        evidenceRequirementMode: 'SOME',
+      }),
+    ).toThrow();
+  });
+
+  it('rejects a lowercase activity code', () => {
+    expect(() =>
+      createActivityDefinitionSchema.parse({ code: 'music.bass.practice', name: 'x' }),
+    ).toThrow();
+  });
+
+  it('validates a competency link with defaults', () => {
+    const parsed = addActivityDefinitionCompetencySchema.parse({ competencyId: COMPETENCY_ID });
+    expect(parsed.required).toBe(true);
+    expect(parsed.order).toBe(0);
+  });
+
+  it('validates an evidence type link', () => {
+    const parsed = addActivityDefinitionEvidenceTypeSchema.parse({ evidenceTypeId: EVIDENCE_TYPE_ID });
+    expect(parsed.evidenceTypeId).toBe(EVIDENCE_TYPE_ID);
+  });
+});
