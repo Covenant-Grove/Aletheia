@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useToast } from '@aletheia/ui';
 import type {
   GenerateReportDto,
+  GradingScale,
   LearnerSummaryDto,
   OfficialReportResponseDto,
 } from '@aletheia/contracts';
@@ -16,9 +17,10 @@ export default function ReportsPage() {
   const [learners, setLearners] = useState<LearnerSummaryDto[]>([]);
   const [activeLearnerId, setActiveLearnerId] = useState<string | null>(null);
   const [reports, setReports] = useState<OfficialReportResponseDto[]>([]);
+  const [defaultGradingScale, setDefaultGradingScale] = useState<GradingScale | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
-  // Initial Load: family, learners
+  // Initial Load: family, learners, settings (for the default grading scale)
   useEffect(() => {
     async function loadBaseData() {
       try {
@@ -36,6 +38,14 @@ export default function ReportsPage() {
         if (learnersRes.ok) {
           const lData = await learnersRes.json();
           setLearners(lData);
+        }
+
+        const settingsRes = await fetch(`/api/v1/families/${storedFamilyId}/settings`, {
+          credentials: 'include',
+        });
+        if (settingsRes.ok) {
+          const sData = await settingsRes.json();
+          setDefaultGradingScale(sData.defaultGradingScale);
         }
       } catch {
         // ignore
@@ -177,6 +187,7 @@ export default function ReportsPage() {
             onDeleteReport={handleDeleteReport}
             onExportCsv={handleExportCsv}
             onExportPdf={handleExportPdf}
+            defaultGradingScale={defaultGradingScale}
           />
         )}
       </div>

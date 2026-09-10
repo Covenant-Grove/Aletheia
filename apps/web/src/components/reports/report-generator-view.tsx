@@ -50,6 +50,7 @@ export interface ReportGeneratorViewProps {
   onDeleteReport: (reportId: string) => Promise<void>;
   onExportCsv: (reportId: string) => Promise<void>;
   onExportPdf?: ((reportId: string) => Promise<void>) | undefined;
+  defaultGradingScale?: GradingScale | undefined;
 }
 
 export function ReportGeneratorView({
@@ -60,6 +61,7 @@ export function ReportGeneratorView({
   onDeleteReport,
   onExportCsv,
   onExportPdf,
+  defaultGradingScale,
 }: ReportGeneratorViewProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedReportForView, setSelectedReportForView] =
@@ -71,7 +73,12 @@ export function ReportGeneratorView({
   );
   const [reportType, setReportType] = useState<ReportType>('ACADEMIC_TRANSCRIPT');
   const [title, setTitle] = useState('Histórico Escolar - Ano Letivo');
-  const [gradingScale, setGradingScale] = useState<GradingScale>('MASTERY_QUALITATIVE');
+  // Pre-selects the family's configured default (Settings > "Estrutura
+  // Pedagógica & Escala de Avaliação Padrão") rather than hardcoding one --
+  // still freely overridable per report via the dropdown below.
+  const [gradingScale, setGradingScale] = useState<GradingScale>(
+    defaultGradingScale ?? 'MASTERY_QUALITATIVE',
+  );
   const [includeAttendance, setIncludeAttendance] = useState(true);
   const [includePortfolioHighlights, setIncludePortfolioHighlights] = useState(true);
   const [notes, setNotes] = useState('');
@@ -95,7 +102,7 @@ export function ReportGeneratorView({
     setSelectedLearnerId(defaultLearner?.id ?? '');
     setReportType('ACADEMIC_TRANSCRIPT');
     setTitle(learnerName ? `Histórico Escolar - ${learnerName}` : 'Histórico Escolar Oficial');
-    setGradingScale('MASTERY_QUALITATIVE');
+    setGradingScale(defaultGradingScale ?? 'MASTERY_QUALITATIVE');
     setIncludeAttendance(true);
     setIncludePortfolioHighlights(true);
     setNotes('');

@@ -1,0 +1,46 @@
+import type { Dictionary } from './pt-BR';
+
+export const enUS: Dictionary = {
+  common: {
+    home: 'Home',
+    logout: 'Sign out',
+    accessDeniedTitle: 'Access restricted',
+    accessDeniedDescription: 'You do not have permission to access this page.',
+  },
+  nav: {
+    home: 'Home',
+    learners: 'Learners',
+    devotional: 'Devotional',
+    curriculum: 'Curriculum',
+    schedule: 'Schedule & Routine',
+    records: 'Learning Journal',
+    portfolio: 'Portfolio',
+    attendance: 'Attendance',
+    reports: 'Reports',
+    settings: 'Settings',
+  },
+  notifications: {
+    iconAriaLabel: 'Bell',
+    bellAriaLabel: 'Notifications ({count} unread)',
+    title: 'Notifications',
+    newCount: '{count} new',
+    markAllRead: 'Mark all read',
+    markAsRead: 'Mark as read',
+    empty: 'No notifications right now.',
+    timeJustNow: 'Just now',
+    timeMinutesAgo: '{count}m ago',
+    timeHoursAgo: '{count}h ago',
+    typeDevotionalReminder: 'Devotional',
+    typeDailyScheduleReminder: 'Schedule',
+    typeAttendanceMissingReminder: 'Attendance',
+    typePrayerAnsweredAlert: 'Prayer Answered',
+    typeSystemNotice: 'System Notice',
+    typeFallback: 'Notification',
+  },
+  learnerFocus: {
+    wholeFamily: 'Whole Family',
+    familyIconAriaLabel: 'Family',
+    ariaLabel: 'Learner Focus',
+    selectedAriaLabel: 'Selected learner: {name}',
+  },
+};

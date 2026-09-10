@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AletheiaIcon } from '@aletheia/ui';
 import type { LearnerSummaryDto } from '@aletheia/contracts';
+import { useLocale } from '../../lib/i18n/locale-context';
 
 export interface LearnerFocusSwitcherProps {
   learners: LearnerSummaryDto[];
@@ -19,6 +20,7 @@ export function LearnerFocusSwitcher({
 }: LearnerFocusSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { t } = useLocale();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -37,7 +39,7 @@ export function LearnerFocusSwitcher({
   const activeLearner = learners.find((l) => l.id === activeLearnerId);
   const activeLabel = activeLearner
     ? activeLearner.preferredName || activeLearner.firstName
-    : 'Toda a Família';
+    : t('learnerFocus.wholeFamily');
 
   const handleSelect = (learnerId: string | null) => {
     onSelectLearner(learnerId);
@@ -54,7 +56,7 @@ export function LearnerFocusSwitcher({
       {/* Hidden select for full backward test compatibility and accessibility */}
       <select
         data-testid="learner-focus-select"
-        aria-label="Foco do Educando"
+        aria-label={t('learnerFocus.ariaLabel')}
         value={activeLearnerId ?? ''}
         onChange={(e) => onSelectLearner(e.target.value ? e.target.value : null)}
         style={{
@@ -65,7 +67,7 @@ export function LearnerFocusSwitcher({
           height: '1px',
         }}
       >
-        <option value="">Toda a Família</option>
+        <option value="">{t('learnerFocus.wholeFamily')}</option>
         {learners.map((learner) => {
           const displayName = learner.preferredName || learner.firstName;
           return (
@@ -80,7 +82,7 @@ export function LearnerFocusSwitcher({
       <button
         type="button"
         data-testid="learner-focus-btn"
-        aria-label={`Educando selecionado: ${activeLabel}`}
+        aria-label={t('learnerFocus.selectedAriaLabel', { name: activeLabel })}
         aria-expanded={isOpen}
         onClick={() => setIsOpen((prev) => !prev)}
         style={{
@@ -118,7 +120,7 @@ export function LearnerFocusSwitcher({
             {activeLabel.charAt(0).toUpperCase()}
           </span>
         ) : (
-          <span aria-label="Família" style={{ display: 'inline-flex', alignItems: 'center' }}>
+          <span aria-label={t('learnerFocus.familyIconAriaLabel')} style={{ display: 'inline-flex', alignItems: 'center' }}>
             <AletheiaIcon name="users" size={14} style={{ color: 'var(--color-indigo-600)' }} />
           </span>
         )}
@@ -166,7 +168,7 @@ export function LearnerFocusSwitcher({
             }}
           >
             <AletheiaIcon name="users" size={16} style={{ color: 'var(--color-indigo-600)' }} />
-            <span>Toda a Família</span>
+            <span>{t('learnerFocus.wholeFamily')}</span>
           </button>
 
           <div style={{ height: '1px', backgroundColor: 'var(--border-light)', margin: '0.125rem 0' }} />

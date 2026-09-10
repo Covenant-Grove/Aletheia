@@ -9,6 +9,7 @@ import type {
 } from '@aletheia/contracts';
 import { Can } from '../auth/role-guard';
 import { useAuthRole } from '../../lib/auth/rbac-context';
+import { useLocale, type Locale } from '../../lib/i18n/locale-context';
 
 export interface FamilyGeneralSettingsProps {
   settings: FamilySettingsResponseDto | null;
@@ -61,6 +62,7 @@ export function FamilyGeneralSettings({
   onSave,
   isLoading = false,
 }: FamilyGeneralSettingsProps) {
+  const { setLocale } = useLocale();
   const [homeschoolName, setHomeschoolName] = useState('');
   const [timezone, setTimezone] = useState('America/Sao_Paulo');
   const [defaultGradingScale, setDefaultGradingScale] = useState<GradingScale>('MASTERY_QUALITATIVE');
@@ -164,7 +166,15 @@ export function FamilyGeneralSettings({
               label="Idioma do Sistema"
               data-testid="language-select"
               value={language}
-              onChange={(e) => setLanguage(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value as Locale;
+                setLanguage(next);
+                // Instant switch, independent of the "Salvar" button below --
+                // a guardian shouldn't have to save the whole form just to
+                // see the UI in their chosen language. Persistence to the
+                // backend still happens on save, same as every other field.
+                setLocale(next);
+              }}
               disabled={isLoading || isSaving || isReadOnly}
               options={languageOptions}
             />

@@ -7,6 +7,7 @@ describe('ReportService', () => {
   let reportRepo: any;
   let attendanceService: any;
   let pdfRenderer: any;
+  let settingsApi: any;
 
   const FAMILY_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
   const LEARNER_ID = 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22';
@@ -158,7 +159,25 @@ describe('ReportService', () => {
       }),
     };
 
-    service = new ReportService(prisma, reportRepo, attendanceService, pdfRenderer);
+    settingsApi = {
+      getSettings: jest.fn().mockResolvedValue({
+        id: 'settings-1',
+        familyId: FAMILY_ID,
+        homeschoolName: null,
+        defaultGradingScale: 'MASTERY_QUALITATIVE',
+        timezone: 'America/Sao_Paulo',
+        language: 'pt-BR',
+        devotionalReminderTime: null,
+        dailyScheduleReminderTime: null,
+        attendanceReminderEnabled: true,
+        emailNotificationsEnabled: true,
+        inAppNotificationsEnabled: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }),
+    };
+
+    service = new ReportService(prisma, reportRepo, attendanceService, pdfRenderer, settingsApi);
   });
 
   describe('Generate Academic Transcript', () => {
@@ -191,6 +210,28 @@ describe('ReportService', () => {
             }),
           ]),
         }),
+        null,
+      );
+    });
+
+    it('uses the configured homeschool name over the default when set', async () => {
+      settingsApi.getSettings.mockResolvedValue({
+        homeschoolName: 'Grace Classical Academy',
+      });
+
+      await service.generateReport(FAMILY_ID, {
+        learnerId: LEARNER_ID,
+        academicYearId: YEAR_ID,
+        type: 'ACADEMIC_TRANSCRIPT',
+        title: 'Official Transcript 2026',
+        gradingScale: 'LETTER_A_F',
+        includeAttendance: true,
+      });
+
+      expect(reportRepo.create).toHaveBeenCalledWith(
+        FAMILY_ID,
+        expect.anything(),
+        expect.objectContaining({ familyOrganizationName: 'Grace Classical Academy' }),
         null,
       );
     });

@@ -421,6 +421,33 @@ describe('Attendance Tracker, Compliance Gauges & Official Transcript Web Compon
       expect(deleteReportMock).toHaveBeenCalledWith('rep-1');
     });
 
+    // Regression test: the grading-scale dropdown pre-selected the family's
+    // configured default correctly on the component's first mount, but
+    // `handleOpenModal` (which resets the whole form every time the "Gerar
+    // Relatório Oficial" button is clicked) hardcoded 'MASTERY_QUALITATIVE'
+    // instead of the same default, silently overwriting it the moment a
+    // guardian actually opened the modal. Confirmed live in the browser
+    // before fixing -- unit tests alone hadn't caught it.
+    it('pre-selects the configured default grading scale when opening the modal', () => {
+      render(
+        <AuthProvider role="OWNER_GUARDIAN">
+          <ReportGeneratorView
+            reports={[]}
+            learners={mockLearners}
+            activeLearnerId={null}
+            onGenerateReport={vi.fn()}
+            onDeleteReport={vi.fn()}
+            onExportCsv={vi.fn()}
+            defaultGradingScale="LETTER_A_F"
+          />
+        </AuthProvider>
+      );
+
+      fireEvent.click(screen.getByTestId('open-generate-report-btn'));
+
+      expect(screen.getByTestId('report-grading-scale-select')).toHaveValue('LETTER_A_F');
+    });
+
     it('hides generate and delete report buttons for EDUCATOR role', () => {
       render(
         <AuthProvider role="EDUCATOR">

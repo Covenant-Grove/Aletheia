@@ -1,9 +1,13 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../platform/database/prisma.service.js';
 import { ReportRepository } from '../infrastructure/report.repository.js';
 import { AttendanceService } from './attendance.service.js';
 import { GradeConverter } from '../domain/grade-converter.js';
 import { TranscriptPdfRenderer } from './transcript-pdf.renderer.js';
+import {
+  SETTINGS_PUBLIC_API,
+  type SettingsPublicApi,
+} from '../../settings/application/public-api.js';
 import type {
   AcademicTranscriptDto,
   ExportFormat,
@@ -20,6 +24,8 @@ export class ReportService {
     private readonly reportRepo: ReportRepository,
     private readonly attendanceService: AttendanceService,
     private readonly pdfRenderer: TranscriptPdfRenderer,
+    @Inject(SETTINGS_PUBLIC_API)
+    private readonly settingsApi: SettingsPublicApi,
   ) {}
 
   async generateReport(
@@ -166,9 +172,10 @@ export class ReportService {
     dto: GenerateReportDto,
     learner: any,
   ): Promise<AcademicTranscriptDto> {
-    const family = await this.prisma.family.findUnique({
-      where: { id: familyId },
-    });
+    const [family, settings] = await Promise.all([
+      this.prisma.family.findUnique({ where: { id: familyId } }),
+      this.settingsApi.getSettings(familyId),
+    ]);
 
     let academicYearTitle: string | null = null;
     if (dto.academicYearId) {
@@ -261,7 +268,12 @@ export class ReportService {
       gradeLevel: learner.customGrade ?? learner.stage ?? null,
       academicYearId: dto.academicYearId ?? null,
       academicYearTitle: academicYearTitle ?? null,
-      familyOrganizationName: family ? `${family.name} Homeschool` : 'Homeschool Academy',
+      // Prefers the guardian's configured homeschool name (Settings >
+      // "Nome da Academia Familiar") over the family's plain account name --
+      // that setting used to be saved and never read anywhere.
+      familyOrganizationName:
+        settings.homeschoolName?.trim() ||
+        (family ? `${family.name} Homeschool` : 'Homeschool Academy'),
       gradingScale,
       generatedDate: new Date().toISOString().slice(0, 10),
       attendanceSummary: attendanceSummary ?? null,
@@ -277,6 +289,7 @@ export class ReportService {
 
     if (report.type === 'ACADEMIC_TRANSCRIPT') {
       const content = report.content as AcademicTranscriptDto;
+      lines.push(`Homeschool,${this.escapeCsv(content.familyOrganizationName)}`);
       lines.push(`Report Title,${this.escapeCsv(report.title)}`);
       lines.push(`Learner,${this.escapeCsv(content.learnerName)}`);
       lines.push(`Academic Year,${this.escapeCsv(content.academicYearTitle ?? 'N/A')}`);
