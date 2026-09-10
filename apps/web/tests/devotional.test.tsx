@@ -323,6 +323,71 @@ describe('Devotional & Prayer Components', () => {
 
       expect(screen.getByTestId('devotional-form-modal')).toBeInTheDocument();
     });
+
+    // Regression test: handleAnswerPrayer previously sent `PATCH
+    // .../prayers/:id/answer`, but the API only ever registered `POST` on
+    // that route -- every real click 404'd silently (the button-click ->
+    // onAnswerPrayer-prop wiring was covered by a PrayerJournal-level test,
+    // but nothing exercised the page's actual fetch() call). Confirmed live
+    // against the running dev server before fixing.
+    it('answers a prayer with a POST request to the correct URL', async () => {
+      localStorage.setItem('familyId', mockPetitionPrayer.familyId);
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ ...mockPetitionPrayer, isAnswered: true, answeredNote: 'Resposta!' }),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      render(
+        <AuthProvider initialRole="OWNER_GUARDIAN">
+          <DevotionalPage
+            initialDevotional={mockDevotional}
+            initialPrayers={[mockPetitionPrayer]}
+          />
+        </AuthProvider>
+      );
+
+      fireEvent.click(screen.getByTestId(`answer-prayer-btn-${mockPetitionPrayer.id}`));
+      fireEvent.change(screen.getByTestId('answered-note-input'), {
+        target: { value: 'Resposta!' },
+      });
+      fireEvent.click(screen.getByTestId('confirm-answer-btn'));
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          `/api/v1/families/${mockPetitionPrayer.familyId}/prayers/${mockPetitionPrayer.id}/answer`,
+          expect.objectContaining({ method: 'POST' }),
+        );
+      });
+    });
+
+    // Regression test: handleArchivePrayer previously sent `DELETE
+    // .../prayers/:id` -- a route that doesn't exist at all (the real
+    // archive route is `POST .../prayers/:id/archive`). Same gap as above:
+    // only the prop-callback wiring was tested, not the real fetch call.
+    it('archives a prayer with a POST request to the /archive URL', async () => {
+      localStorage.setItem('familyId', mockPetitionPrayer.familyId);
+      const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+      vi.stubGlobal('fetch', mockFetch);
+
+      render(
+        <AuthProvider initialRole="OWNER_GUARDIAN">
+          <DevotionalPage
+            initialDevotional={mockDevotional}
+            initialPrayers={[mockPetitionPrayer]}
+          />
+        </AuthProvider>
+      );
+
+      fireEvent.click(screen.getByTestId(`archive-prayer-btn-${mockPetitionPrayer.id}`));
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          `/api/v1/families/${mockPetitionPrayer.familyId}/prayers/${mockPetitionPrayer.id}/archive`,
+          expect.objectContaining({ method: 'POST' }),
+        );
+      });
+    });
   });
 });
 
