@@ -7,17 +7,20 @@ import { PedagogicalModelDefinitionResolver } from './infrastructure/pedagogical
 import { PedagogicalModelDefinitionSeeder } from './infrastructure/pedagogical-model-definition.seeder.js';
 import { EvidenceTypeDefinitionSeeder } from './infrastructure/evidence-type-definition.seeder.js';
 import { DefinitionsRepository } from './infrastructure/definitions.repository.js';
+import { ProfilesRepository } from './infrastructure/profiles.repository.js';
 import { CurriculumService } from './application/curriculum.service.js';
 import { ObjectiveService } from './application/objective.service.js';
 import { DefinitionsService } from './application/definitions.service.js';
+import { ProfilesService } from './application/profiles.service.js';
 import { CURRICULUM_PUBLIC_API } from './application/public-api.js';
 import { CurriculumController } from './presentation/curriculum.controller.js';
 import { ObjectiveController } from './presentation/objective.controller.js';
 import { DefinitionsController } from './presentation/definitions.controller.js';
+import { ProfilesController } from './presentation/profiles.controller.js';
 
 @Module({
   imports: [DatabaseModule],
-  controllers: [CurriculumController, ObjectiveController, DefinitionsController],
+  controllers: [CurriculumController, ObjectiveController, DefinitionsController, ProfilesController],
   providers: [
     CurriculumRepository,
     ObjectiveRepository,
@@ -26,9 +29,11 @@ import { DefinitionsController } from './presentation/definitions.controller.js'
     PedagogicalModelDefinitionSeeder,
     EvidenceTypeDefinitionSeeder,
     DefinitionsRepository,
+    ProfilesRepository,
     CurriculumService,
     ObjectiveService,
     DefinitionsService,
+    ProfilesService,
     {
       provide: CURRICULUM_PUBLIC_API,
       useExisting: CurriculumService,
