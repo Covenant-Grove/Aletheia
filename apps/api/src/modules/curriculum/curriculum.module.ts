@@ -8,19 +8,28 @@ import { PedagogicalModelDefinitionSeeder } from './infrastructure/pedagogical-m
 import { EvidenceTypeDefinitionSeeder } from './infrastructure/evidence-type-definition.seeder.js';
 import { DefinitionsRepository } from './infrastructure/definitions.repository.js';
 import { ProfilesRepository } from './infrastructure/profiles.repository.js';
+import { EvidenceSubmissionRepository } from './infrastructure/evidence-submission.repository.js';
 import { CurriculumService } from './application/curriculum.service.js';
 import { ObjectiveService } from './application/objective.service.js';
 import { DefinitionsService } from './application/definitions.service.js';
 import { ProfilesService } from './application/profiles.service.js';
+import { EvidenceSubmissionService } from './application/evidence-submission.service.js';
 import { CURRICULUM_PUBLIC_API } from './application/public-api.js';
 import { CurriculumController } from './presentation/curriculum.controller.js';
 import { ObjectiveController } from './presentation/objective.controller.js';
 import { DefinitionsController } from './presentation/definitions.controller.js';
 import { ProfilesController } from './presentation/profiles.controller.js';
+import { EvidenceSubmissionController } from './presentation/evidence-submission.controller.js';
 
 @Module({
   imports: [DatabaseModule],
-  controllers: [CurriculumController, ObjectiveController, DefinitionsController, ProfilesController],
+  controllers: [
+    CurriculumController,
+    ObjectiveController,
+    DefinitionsController,
+    ProfilesController,
+    EvidenceSubmissionController,
+  ],
   providers: [
     CurriculumRepository,
     ObjectiveRepository,
@@ -30,10 +39,12 @@ import { ProfilesController } from './presentation/profiles.controller.js';
     EvidenceTypeDefinitionSeeder,
     DefinitionsRepository,
     ProfilesRepository,
+    EvidenceSubmissionRepository,
     CurriculumService,
     ObjectiveService,
     DefinitionsService,
     ProfilesService,
+    EvidenceSubmissionService,
     {
       provide: CURRICULUM_PUBLIC_API,
       useExisting: CurriculumService,
