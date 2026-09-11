@@ -89,6 +89,7 @@ function selectDefaultFamilyId(fetchedFamilies: FamilyResponseDto[]): string | n
 
 export function AuthProvider({ children }: { children: React.ReactNode }): React.ReactElement {
   const [status, setStatus] = useState<AuthStatus>('loading');
+  // Includes isPlatformAdmin from the real /auth/me and session responses.
   const [user, setUser] = useState<UserSummaryDto | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [families, setFamilies] = useState<FamilyResponseDto[]>([]);

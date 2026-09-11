@@ -42,6 +42,7 @@ export type NavItem = NavigationItem;
 // render time inside ProductShell (module-level constants can't call the
 // useLocale() hook).
 export const MAIN_NAV_ITEMS: NavigationItem[] = [
+  { id: 'admin-catalog', label: 'nav.adminCatalog', href: '/admin/catalog', icon: <AletheiaIcon name="library" size={18} /> },
   { id: 'home', label: 'nav.home', href: '/', icon: <AletheiaIcon name="home" size={18} /> },
   { id: 'learners', label: 'nav.learners', href: '/learners', icon: <AletheiaIcon name="users" size={18} /> },
   { id: 'devotional', label: 'nav.devotional', href: '/devotional', icon: <AletheiaIcon name="book-open" size={18} /> },
@@ -230,18 +231,21 @@ export function ProductShell({
         : undefined;
 
   const permissions = getPermissions(activeRole);
+  const isPlatformAdmin = authContext?.status === 'authenticated' && authContext.user?.isPlatformAdmin === true;
 
   // A hidden nav item only stops navigation via the menu — it doesn't stop
   // someone from typing the URL directly. Gate the page content itself too,
   // with an accessible state that says nothing about what the page holds.
   const requiredPermission = PATH_PERMISSIONS[activePath];
   const accessDenied =
-    requiredPermission !== undefined &&
-    profileUser !== undefined &&
-    !permissions.can(requiredPermission);
+    (activePath === '/admin/catalog' && !isPlatformAdmin) ||
+    (requiredPermission !== undefined &&
+      profileUser !== undefined &&
+      !permissions.can(requiredPermission));
 
   const navigationItems = MAIN_NAV_ITEMS
     .filter((item) => {
+      if (item.id === 'admin-catalog') return isPlatformAdmin;
       const requiredPermission = NAV_ITEM_PERMISSIONS[item.id];
       return requiredPermission === undefined || permissions.can(requiredPermission);
     })
@@ -274,6 +278,7 @@ export function ProductShell({
         // from authContext.user directly wherever it actually matters.
         emailVerified: true,
         mfaEnabled: true,
+        isPlatformAdmin,
         createdAt: new Date().toISOString(),
       }
     : null;

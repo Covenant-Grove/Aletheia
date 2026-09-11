@@ -16,6 +16,7 @@ describe('AuthContext and useAuth', () => {
     fullName: 'Guardian Silva',
     emailVerified: false,
     mfaEnabled: false,
+    isPlatformAdmin: false,
     createdAt: '2026-08-30T00:00:00.000Z',
   };
 
@@ -59,6 +60,34 @@ describe('AuthContext and useAuth', () => {
     localStorage.clear();
     setApiAuthToken(null);
     vi.restoreAllMocks();
+  });
+
+  it.each([false, true])('preserves isPlatformAdmin=%s from me, login, registration and MFA, then clears it on logout', async (isPlatformAdmin) => {
+    const sessionUser = { ...mockUser, isPlatformAdmin };
+    vi.spyOn(api, 'get').mockImplementation(async (path) => path === '/auth/me' ? sessionUser : []);
+    vi.spyOn(api, 'post').mockResolvedValue({ accessToken: 'token', user: sessionUser });
+    const wrapper = ({ children }: { children: React.ReactNode }) => <AuthProvider>{children}</AuthProvider>;
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.status).toBe('authenticated'));
+    expect(result.current.user?.isPlatformAdmin).toBe(isPlatformAdmin);
+    await act(async () => { await result.current.login({ email: mockUser.email, password: 'password123' }); });
+    expect(result.current.user?.isPlatformAdmin).toBe(isPlatformAdmin);
+    await act(async () => { await result.current.register({ email: mockUser.email, password: 'password123', fullName: mockUser.fullName }); });
+    expect(result.current.user?.isPlatformAdmin).toBe(isPlatformAdmin);
+    await act(async () => { await result.current.verifyMfa({ challengeToken: 'challenge', code: '123456' }); });
+    expect(result.current.user?.isPlatformAdmin).toBe(isPlatformAdmin);
+    await act(async () => { result.current.logout(); });
+    expect(result.current.user).toBeNull();
+  });
+
+  it('refreshes a changed platform admin flag from me', async () => {
+    const get = vi.spyOn(api, 'get').mockImplementation(async (path) => path === '/auth/me' ? { ...mockUser, isPlatformAdmin: true } : []);
+    const wrapper = ({ children }: { children: React.ReactNode }) => <AuthProvider>{children}</AuthProvider>;
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.user?.isPlatformAdmin).toBe(true));
+    get.mockImplementation(async (path) => path === '/auth/me' ? { ...mockUser, isPlatformAdmin: false } : []);
+    await act(async () => { await result.current.refreshSession(); });
+    expect(result.current.user?.isPlatformAdmin).toBe(false);
   });
 
   afterEach(() => {

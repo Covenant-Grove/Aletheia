@@ -9,6 +9,7 @@ export const ptBR = {
     accessDeniedDescription: 'Você não tem permissão para acessar esta página.',
   },
   nav: {
+    adminCatalog: 'Catálogo administrativo',
     home: 'Início',
     learners: 'Educandos',
     devotional: 'Devocional',

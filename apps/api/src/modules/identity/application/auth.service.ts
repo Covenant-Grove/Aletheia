@@ -102,9 +102,9 @@ export class AuthService implements IdentityPublicApi {
     });
 
     await this.sendVerificationEmail(user.id, user.email, user.fullName);
-    await this.syncPlatformAdminBootstrap(user);
+    const sessionUser = await this.syncPlatformAdminBootstrap(user);
 
-    return this.issueSession(user.id, user.email, user.toDto());
+    return this.issueSession(user.id, user.email, sessionUser);
   }
 
   async login(dto: LoginDto): Promise<LoginResult> {
@@ -119,7 +119,7 @@ export class AuthService implements IdentityPublicApi {
       throw new UnauthorizedException('Invalid email or password.');
     }
 
-    await this.syncPlatformAdminBootstrap(user);
+    const sessionUser = await this.syncPlatformAdminBootstrap(user);
 
     if (user.mfaEnabled) {
       const challenge = await this.mfaLoginChallengeRepository.issue(user.id);
@@ -127,7 +127,7 @@ export class AuthService implements IdentityPublicApi {
     }
 
     await this.recordAuditEvent(user.id, 'LOGIN_SUCCEEDED');
-    return this.issueSession(user.id, user.email, user.toDto());
+    return this.issueSession(user.id, user.email, sessionUser);
   }
 
   async mfaSetup(userId: string, password: string): Promise<MfaSetupResponseDto> {
@@ -481,10 +481,13 @@ export class AuthService implements IdentityPublicApi {
   // the list later both get promoted without a separate step. Deliberately
   // one-way -- removing an email from the list never demotes anyone; that
   // needs a manual/future-admin-UI action.
-  private async syncPlatformAdminBootstrap(user: UserEntity): Promise<void> {
-    if (user.isPlatformAdmin) return;
-    if (!this.environment.platformAdminEmails.includes(user.email.toLowerCase())) return;
+  private async syncPlatformAdminBootstrap(user: UserEntity): Promise<UserSummaryDto> {
+    if (user.isPlatformAdmin || !this.environment.platformAdminEmails.includes(user.email.toLowerCase())) {
+      return user.toDto();
+    }
     await this.userRepository.grantPlatformAdmin(user.id);
+    // The entity predates the database update; return the persisted flag in this session too.
+    return this.getProfile(user.id);
   }
 
   private async issueSession(

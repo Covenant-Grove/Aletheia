@@ -48,6 +48,7 @@ describe('OnboardingPage persistence and navigation', () => {
         fullName: 'Guardian Silva',
         emailVerified: false,
         mfaEnabled: false,
+        isPlatformAdmin: false,
         createdAt: '2026-08-30T00:00:00.000Z',
       },
       token: 'jwt-mock-token',

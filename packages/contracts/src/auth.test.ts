@@ -21,6 +21,14 @@ import {
 } from './auth.js';
 
 describe('auth contracts', () => {
+  it.each([false, true])('preserves platform admin=%s in the user summary', (isPlatformAdmin) => {
+    const result = userSummarySchema.parse({
+      id: '00000000-0000-4000-8000-000000000001', email: 'admin@example.com',
+      fullName: 'Admin', emailVerified: true, mfaEnabled: false,
+      isPlatformAdmin, createdAt: '2026-09-11T00:00:00.000Z',
+    });
+    expect(result).toHaveProperty('isPlatformAdmin', isPlatformAdmin);
+  });
   describe('registerGuardianSchema', () => {
     it('validates a valid registration payload', () => {
       const payload: RegisterGuardianDto = {
@@ -97,6 +105,7 @@ describe('auth contracts', () => {
         fullName: 'Jane Doe',
         emailVerified: false,
         mfaEnabled: false,
+        isPlatformAdmin: false,
         createdAt: '2026-08-23T12:00:00.000Z',
       };
 

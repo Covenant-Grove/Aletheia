@@ -83,6 +83,25 @@ describe('AuthService', () => {
     }
   }
 
+  it.each([false, true])('exposes persisted platform admin=%s in registration, login, refresh and profile', async (isAdmin) => {
+    environment.platformAdminEmails = isAdmin ? ['admin@example.com'] : [];
+    const registered = await authService.register({ email: 'admin@example.com', fullName: 'Admin', password: 'password12345' });
+    expect(registered.user).toHaveProperty('isPlatformAdmin', isAdmin);
+    const loggedIn = await authService.login({ email: 'admin@example.com', password: 'password12345' });
+    expectAuthSession(loggedIn);
+    expect(loggedIn.user).toHaveProperty('isPlatformAdmin', isAdmin);
+    expect((await authService.refresh(loggedIn.refreshToken)).user).toHaveProperty('isPlatformAdmin', isAdmin);
+    expect(await authService.getProfile(registered.user.id)).toHaveProperty('isPlatformAdmin', isAdmin);
+  });
+
+  it('returns the newly granted platform admin flag on the first login after bootstrap changes', async () => {
+    await authService.register({ email: 'admin@example.com', fullName: 'Admin', password: 'password12345' });
+    environment.platformAdminEmails = ['admin@example.com'];
+    const result = await authService.login({ email: 'admin@example.com', password: 'password12345' });
+    expectAuthSession(result);
+    expect(result.user).toHaveProperty('isPlatformAdmin', true);
+  });
+
   beforeEach(() => {
     fakeUsers = new Map();
     hasher = new PasswordHasher();
@@ -1177,6 +1196,7 @@ describe('AuthService', () => {
     });
 
     it('mfaVerify completes login with a valid TOTP code and destroys the challenge', async () => {
+      environment.platformAdminEmails = ['mfa@example.com'];
       const userId = await makeMfaUser();
       await authService.mfaSetup(userId, 'password12345');
       (verifySync as jest.Mock).mockReturnValue({ valid: true, delta: 0 });
@@ -1192,10 +1212,12 @@ describe('AuthService', () => {
 
       expect(session.accessToken).toBeDefined();
       expect(session.user.email).toBe('mfa@example.com');
+      expect(session.user.isPlatformAdmin).toBe(true);
       expect(fakeLoginChallenges.size).toBe(0);
     });
 
     it('mfaVerify completes login with a recovery code, which is single-use', async () => {
+      environment.platformAdminEmails = ['mfa@example.com'];
       const userId = await makeMfaUser();
       const setup = await authService.mfaSetup(userId, 'password12345');
       (verifySync as jest.Mock).mockReturnValue({ valid: true, delta: 0 });
@@ -1217,6 +1239,7 @@ describe('AuthService', () => {
       const secondChallenge = challengeOf(
         await authService.login({ email: 'mfa@example.com', password: 'password12345' }),
       );
+      expect(session.user.isPlatformAdmin).toBe(true);
       await expect(
         authService.mfaVerify({ challengeToken: secondChallenge.challengeToken, code }),
       ).rejects.toThrow(BadRequestException);

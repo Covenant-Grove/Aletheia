@@ -179,6 +179,7 @@ describe('ProductShell adapter', () => {
           fullName: 'Outer Guardian',
           emailVerified: false,
           mfaEnabled: false,
+          isPlatformAdmin: false,
           createdAt: '2026-01-01T00:00:00.000Z',
         }}
       >
@@ -220,6 +221,7 @@ describe('ProductShell adapter', () => {
           fullName: 'Guardião do Contexto',
           emailVerified: false,
           mfaEnabled: false,
+          isPlatformAdmin: false,
           createdAt: '2026-01-01T00:00:00.000Z',
         }}
       >
@@ -333,6 +335,7 @@ describe('ProductShell adapter', () => {
         fullName: 'Guardião Real',
         emailVerified: false,
         mfaEnabled: false,
+        isPlatformAdmin: false,
         createdAt: '2026-08-30T00:00:00.000Z',
       },
       token: 'jwt-token',
@@ -412,6 +415,7 @@ describe('ProductShell adapter', () => {
         fullName: 'Guardião Real',
         emailVerified: false,
         mfaEnabled: false,
+        isPlatformAdmin: false,
         createdAt: '2026-08-30T00:00:00.000Z',
       },
       token: 'jwt-token',
