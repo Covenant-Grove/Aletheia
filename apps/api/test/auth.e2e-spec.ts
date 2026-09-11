@@ -25,6 +25,7 @@ describe('Identity Auth E2E', () => {
           fullName: dto.fullName,
           emailVerified: false,
           mfaEnabled: false,
+          isPlatformAdmin: false,
           createdAt: new Date().toISOString(),
         },
       };
@@ -43,6 +44,7 @@ describe('Identity Auth E2E', () => {
           fullName: 'Test Guardian',
           emailVerified: false,
           mfaEnabled: false,
+          isPlatformAdmin: false,
           createdAt: new Date().toISOString(),
         },
       };
@@ -61,6 +63,7 @@ describe('Identity Auth E2E', () => {
           fullName: 'Test Guardian',
           emailVerified: false,
           mfaEnabled: false,
+          isPlatformAdmin: false,
           createdAt: new Date().toISOString(),
         },
       };
@@ -113,6 +116,7 @@ describe('Identity Auth E2E', () => {
         fullName: 'Test Guardian',
         emailVerified: false,
         mfaEnabled: false,
+        isPlatformAdmin: false,
         createdAt: new Date().toISOString(),
       };
     });

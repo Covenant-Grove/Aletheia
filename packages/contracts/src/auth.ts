@@ -6,6 +6,7 @@ export const userSummarySchema = z.object({
   fullName: z.string().min(1),
   emailVerified: z.boolean(),
   mfaEnabled: z.boolean(),
+  isPlatformAdmin: z.boolean(),
   createdAt: z.string(),
 });
 

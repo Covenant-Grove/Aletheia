@@ -8,6 +8,7 @@ export const enUS: Dictionary = {
     accessDeniedDescription: 'You do not have permission to access this page.',
   },
   nav: {
+    adminCatalog: 'Admin catalog',
     home: 'Home',
     learners: 'Learners',
     devotional: 'Devotional',

@@ -15,6 +15,7 @@ const MEMBER_USER_INCLUDE = {
       fullName: true,
       emailVerifiedAt: true,
       mfaEnabled: true,
+      isPlatformAdmin: true,
       createdAt: true,
     },
   },
@@ -102,6 +103,7 @@ export class FamilyRepository {
         fullName: string;
         emailVerifiedAt: Date | null;
         mfaEnabled: boolean;
+        isPlatformAdmin: boolean;
         createdAt: Date;
       };
     }>;
@@ -123,6 +125,7 @@ export class FamilyRepository {
                   fullName: m.user.fullName,
                   emailVerified: m.user.emailVerifiedAt !== null,
                   mfaEnabled: m.user.mfaEnabled,
+                  isPlatformAdmin: m.user.isPlatformAdmin,
                   createdAt: m.user.createdAt.toISOString(),
                 },
               }

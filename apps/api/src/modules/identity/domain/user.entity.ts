@@ -56,6 +56,7 @@ export class UserEntity {
       fullName: this.fullName,
       emailVerified: this.emailVerifiedAt !== null,
       mfaEnabled: this.mfaEnabled,
+      isPlatformAdmin: this.isPlatformAdmin,
       createdAt: this.createdAt.toISOString(),
     };
   }
