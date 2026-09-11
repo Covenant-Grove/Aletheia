@@ -178,6 +178,8 @@ model Family {
   settings           FamilySettings?
   notifications      NotificationItem[]
   exportJobs         DataExportJob[]
+  pedagogicalProfiles PedagogicalProfile[]
+  theologicalProfiles TheologicalProfile[]
 
   @@map("families")
 }
@@ -1364,5 +1366,63 @@ model TheologicalPositionDefinition {
   @@index([topic])
   @@index([status])
   @@map("theological_position_definitions")
+}
+
+// Per-family pedagogical profile (issue #96 section 13). References a
+// PedagogicalModelDefinition by `code`, not by FK to one specific row --
+// same reason CurriculumService.applyTemplate already resolves templates
+// by (code, status=PUBLISHED): which version is the current PUBLISHED one
+// can change over time, and a profile should track the logical model, not
+// pin a row ID. secondaryModels/overrides are JSONB (extensible,
+// non-relational config), per the JSONB-discipline rule.
+//
+// Append-only, same spirit as the platform Definition/Version pattern
+// adapted for a per-family record: "upserting" a profile always INSERTs a
+// new row with version = previous max + 1 for that family, never UPDATEs
+// in place. The current profile is simply the highest-version row for
+// that family. This satisfies "pode alterar preferências sem destruir
+// histórico" and "alterações são versionadas" without a second history
+// table -- nothing is ever mutated or deleted.
+//
+// Not wired into any read path yet -- CurriculumService.applyTemplate
+// still doesn't consult this. That integration is a separate,
+// human-approved step once this foundation is proven correct on its own.
+model PedagogicalProfile {
+  id               String   @id @default(uuid()) @db.Uuid
+  familyId         String   @map("family_id") @db.Uuid
+  version          Int      @default(1)
+  primaryModelCode String   @map("primary_model_code")
+  secondaryModels  Json     @default("[]") @map("secondary_models")
+  overrides        Json     @default("{}")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  @@unique([familyId, version])
+  @@index([familyId])
+  @@map("pedagogical_profiles")
+}
+
+// Per-family theological profile (issue #96 section 14). Same
+// append-only versioning approach as PedagogicalProfile, for the same
+// reasons (audit trail without a second table). `preferredTraditionCode`
+// references a TheologicalTraditionDefinition by code (nullable -- a
+// family may not have chosen one); `topicOverrides` is a generic
+// topic -> TheologicalPositionDefinition-code map, so a family can
+// override the preferred tradition's stance on individual topics without
+// switching traditions wholesale.
+model TheologicalProfile {
+  id                     String   @id @default(uuid()) @db.Uuid
+  familyId               String   @map("family_id") @db.Uuid
+  version                Int      @default(1)
+  preferredTraditionCode String?  @map("preferred_tradition_code")
+  topicOverrides         Json     @default("{}") @map("topic_overrides")
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  @@unique([familyId, version])
+  @@index([familyId])
+  @@map("theological_profiles")
 }
 

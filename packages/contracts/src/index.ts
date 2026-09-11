@@ -13,6 +13,8 @@ export * from './activity-definition.js';
 export * from './theological-taxonomy.js';
 export * from './rubric-definition.js';
 export * from './evidence-type-definition.js';
+export * from './pedagogical-profile.js';
+export * from './theological-profile.js';
 export * from './lesson.js';
 export * from './schedule.js';
 export * from './record.js';
