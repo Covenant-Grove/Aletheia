@@ -35,6 +35,7 @@ model User {
   generatedReports        OfficialReport[]
   authoredEvidenceSubmissions  EvidenceSubmission[] @relation("EvidenceSubmissionAuthor")
   validatedEvidenceSubmissions EvidenceSubmission[] @relation("EvidenceSubmissionValidator")
+  assessmentResultsAssessed    AssessmentResult[]   @relation("AssessmentResultAssessor")
 
   @@map("users")
 }
@@ -183,6 +184,7 @@ model Family {
   pedagogicalProfiles PedagogicalProfile[]
   theologicalProfiles TheologicalProfile[]
   evidenceSubmissions EvidenceSubmission[]
+  assessmentResults   AssessmentResult[]
 
   @@map("families")
 }
@@ -233,6 +235,7 @@ model Learner {
   officialReports    OfficialReport[]
   accessGrant        LearnerAccessGrant?
   evidenceSubmissions EvidenceSubmission[]
+  assessmentResults   AssessmentResult[]
 
   @@index([familyId])
   @@index([familyId, archivedAt])
@@ -1053,6 +1056,7 @@ model RubricDefinition {
   competency    CompetencyDefinition? @relation(fields: [competencyId], references: [id], onDelete: SetNull)
   criteria      RubricCriterion[]
   curriculumLinks CurriculumDefinitionRubric[]
+  assessmentResults AssessmentResult[]
 
   @@unique([code, version])
   @@index([code])
@@ -1075,6 +1079,7 @@ model RubricCriterion {
   updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz
 
   rubric      RubricDefinition @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+  assessmentScores AssessmentResultScore[]
 
   @@unique([rubricId, code])
   @@index([rubricId])
@@ -1522,6 +1527,7 @@ model EvidenceSubmission {
   author       User                           @relation("EvidenceSubmissionAuthor", fields: [authorId], references: [id], onDelete: Restrict)
   validatedBy  User?                          @relation("EvidenceSubmissionValidator", fields: [validatedByUserId], references: [id], onDelete: SetNull)
   competencies EvidenceSubmissionCompetency[]
+  assessmentResults AssessmentResult[]
 
   @@index([familyId])
   @@index([familyId, learnerId])
@@ -1551,4 +1557,57 @@ model EvidenceSubmissionCompetency {
   @@index([evidenceSubmissionId])
   @@index([competencyDefinitionId])
   @@map("evidence_submission_competencies")
+}
+
+// Assessment result (issue #96 Fase 2, section 10's last item: "resultado
+// guarda qual versão foi usada"). Same reasoning as
+// EvidenceSubmissionCompetency: rubricDefinitionId pins the exact
+// version row (Restrict, never hard-deletable out from under a result),
+// plus a denormalized rubricVersion int. Can stand alone (no evidence)
+// for e.g. a pure self-assessment -- evidenceSubmissionId is nullable.
+// `assessorType` is free-form (SELF/PARENT/MENTOR/...), reusing the same
+// "not a closed enum" philosophy already established for
+// RubricDefinition.metadata.assessmentModes, not the literal schema -- a
+// new assessor role is a data value, not a migration.
+model AssessmentResult {
+  id                   String    @id @default(uuid()) @db.Uuid
+  familyId             String    @map("family_id") @db.Uuid
+  learnerId            String    @map("learner_id") @db.Uuid
+  evidenceSubmissionId String?   @map("evidence_submission_id") @db.Uuid
+  rubricDefinitionId   String    @map("rubric_definition_id") @db.Uuid
+  rubricVersion        Int       @map("rubric_version")
+  assessorType         String    @map("assessor_type")
+  assessorUserId       String?   @map("assessor_user_id") @db.Uuid
+  notes                String?
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  family             Family              @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  learner            Learner             @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  evidenceSubmission EvidenceSubmission? @relation(fields: [evidenceSubmissionId], references: [id], onDelete: Restrict)
+  rubricDefinition   RubricDefinition    @relation(fields: [rubricDefinitionId], references: [id], onDelete: Restrict)
+  assessor           User?               @relation("AssessmentResultAssessor", fields: [assessorUserId], references: [id], onDelete: SetNull)
+  scores             AssessmentResultScore[]
+
+  @@index([familyId])
+  @@index([familyId, learnerId])
+  @@index([evidenceSubmissionId])
+  @@index([rubricDefinitionId])
+  @@map("assessment_results")
+}
+
+model AssessmentResultScore {
+  id                 String   @id @default(uuid()) @db.Uuid
+  assessmentResultId String   @map("assessment_result_id") @db.Uuid
+  rubricCriterionId  String   @map("rubric_criterion_id") @db.Uuid
+  score              Float
+  notes              String?
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  assessmentResult AssessmentResult @relation(fields: [assessmentResultId], references: [id], onDelete: Cascade)
+  rubricCriterion  RubricCriterion  @relation(fields: [rubricCriterionId], references: [id], onDelete: Restrict)
+
+  @@unique([assessmentResultId, rubricCriterionId])
+  @@index([assessmentResultId])
+  @@index([rubricCriterionId])
+  @@map("assessment_result_scores")
 }
