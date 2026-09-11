@@ -129,6 +129,24 @@ corepack pnpm --filter @aletheia/api prisma migrate deploy
 
 ### 4. Running the Development Servers
 
+Curriculum template application reads published pedagogical models from the
+database. Migrations install the eight existing models; no manual seed step is
+needed. Re-running `seed:pedagogical-models` only inserts missing baseline
+versions and never overwrites catalog content or publication status.
+
+An administrator can create and publish a model through
+`/api/v1/admin/curriculum-definitions/pedagogical-model-definitions`. A family
+can then pass its code as `template` to the existing
+`/api/v1/families/:familyId/curriculum/templates/apply` endpoint. The learner
+plan records `pedagogicalModelDefinitionId` for the exact published version
+used. Unknown or unpublished codes are rejected. The existing web template
+picker still offers the legacy models; discovering new models in that UI is
+a separate step.
+
+The legacy `pedagogicalFramework` field remains compatible: known models keep
+their existing values and new codes use `CUSTOM`. Applying the old `CUSTOM`
+template keeps its traditional-content behavior through the catalog.
+
 ```bash
 # Run both Frontend (port 3000) and Backend (port 3333) in parallel:
 corepack pnpm dev

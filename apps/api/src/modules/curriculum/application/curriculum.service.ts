@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CurriculumRepository } from '../infrastructure/curriculum.repository.js';
 import { ObjectiveRepository } from '../infrastructure/objective.repository.js';
-import { CurriculumTemplateEngine } from '../infrastructure/curriculum-template.engine.js';
+import { PedagogicalModelDefinitionResolver } from '../infrastructure/pedagogical-model-definition.resolver.js';
+import { pedagogicalFrameworkSchema } from '@aletheia/contracts';
 import type {
   AcademicYearResponseDto,
   ApplyCurriculumTemplateDto,
@@ -19,7 +20,7 @@ export class CurriculumService implements CurriculumPublicApi {
   constructor(
     private readonly curriculumRepo: CurriculumRepository,
     private readonly objectiveRepo: ObjectiveRepository,
-    private readonly templateEngine: CurriculumTemplateEngine,
+    private readonly modelResolver: PedagogicalModelDefinitionResolver,
   ) {}
 
   // Academic Years
@@ -104,43 +105,14 @@ export class CurriculumService implements CurriculumPublicApi {
 
   // Apply Template Accelerator
   async applyTemplate(familyId: string, dto: ApplyCurriculumTemplateDto): Promise<{ subjectsCount: number; objectivesCount: number }> {
-    await this.curriculumRepo.upsertLearnerPlan(familyId, {
-      learnerId: dto.learnerId,
-      academicYearId: dto.academicYearId,
-      pedagogicalFramework: dto.template,
-    });
-
-    const definitions = this.templateEngine.getTemplateDefinitions(dto.template);
-    let createdObjectives = 0;
-    let createdSubjects = 0;
-
-    for (const def of definitions) {
-      let subject = await this.curriculumRepo.findSubjectByName(familyId, def.name);
-      if (!subject) {
-        subject = await this.curriculumRepo.createSubject(familyId, {
-          name: def.name,
-          color: def.color,
-          icon: def.icon,
-          description: def.description,
-        });
-        createdSubjects++;
-      }
-
-      for (let i = 0; i < def.starterObjectives.length; i++) {
-        const title = def.starterObjectives[i];
-        if (!title) continue;
-        await this.objectiveRepo.create(familyId, {
-          learnerId: dto.learnerId,
-          subjectId: subject.id,
-          academicYearId: dto.academicYearId,
-          title,
-          order: i,
-        });
-        createdObjectives++;
-      }
-    }
-
-    return { subjectsCount: createdSubjects, objectivesCount: createdObjectives };
+    // CUSTOM historically used the traditional engine fallback.
+    const code = dto.template === 'CUSTOM' ? 'TRADITIONAL' : dto.template;
+    const definition = await this.modelResolver.resolvePublished(code);
+    if (!definition) throw new NotFoundException('Published pedagogical model not found');
+    const legacy = pedagogicalFrameworkSchema.safeParse(dto.template);
+    return this.curriculumRepo.applyPublishedTemplate(
+      familyId, dto, definition, legacy.success ? legacy.data : 'CUSTOM',
+    );
   }
 
   async getLearnerCurriculumSummary(
@@ -189,6 +161,7 @@ export class CurriculumService implements CurriculumPublicApi {
       learnerId: p.learnerId,
       academicYearId: p.academicYearId,
       pedagogicalFramework: p.pedagogicalFramework,
+      pedagogicalModelDefinitionId: p.pedagogicalModelDefinitionId ?? null,
       notes: p.notes,
       createdAt: p.createdAt.toISOString(),
       updatedAt: p.updatedAt.toISOString(),

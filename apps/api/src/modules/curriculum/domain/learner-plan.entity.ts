@@ -10,5 +10,6 @@ export class LearnerCurriculumPlanEntity {
     public readonly notes: string | null,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
+    public readonly pedagogicalModelDefinitionId: string | null = null,
   ) {}
 }

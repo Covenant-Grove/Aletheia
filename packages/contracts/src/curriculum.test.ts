@@ -13,6 +13,13 @@ const YEAR_ID = 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22';
 const SUBJECT_ID = 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33';
 
 describe('Curriculum Contracts', () => {
+  it('accepts catalog codes outside the legacy framework enum', () => {
+    expect(applyCurriculumTemplateSchema.parse({ learnerId: LEARNER_ID, academicYearId: YEAR_ID, template: 'LOCAL.MODEL_2' }).template).toBe('LOCAL.MODEL_2');
+  });
+
+  it('does not default a notes edit to a different framework', () => {
+    expect(upsertLearnerPlanSchema.parse({ learnerId: LEARNER_ID, academicYearId: YEAR_ID, notes: 'Updated' }).pedagogicalFramework).toBeUndefined();
+  });
   it('validates valid academic year input', () => {
     const valid = {
       year: 2026,
@@ -36,12 +43,12 @@ describe('Curriculum Contracts', () => {
     expect(() => createSubjectSchema.parse({ name: 'Artes', color: 'not-a-hex' })).toThrow();
   });
 
-  it('validates learner curriculum plan with default framework', () => {
+  it('validates learner curriculum plan without an explicit framework', () => {
     const parsed = upsertLearnerPlanSchema.parse({
       learnerId: LEARNER_ID,
       academicYearId: YEAR_ID,
     });
-    expect(parsed.pedagogicalFramework).toBe('CUSTOM');
+    expect(parsed.pedagogicalFramework).toBeUndefined();
   });
 
   it('validates learning objective creation and partial update', () => {

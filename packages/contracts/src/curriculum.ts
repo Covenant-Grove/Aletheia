@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createPedagogicalModelDefinitionSchema } from './pedagogical-model-definition.js';
 
 export const pedagogicalFrameworkSchema = z.enum([
   'CLASSICAL_TRIVIUM',
@@ -80,7 +81,7 @@ export type SubjectResponseDto = z.infer<typeof subjectResponseSchema>;
 export const upsertLearnerPlanSchema = z.object({
   learnerId: z.string().uuid(),
   academicYearId: z.string().uuid(),
-  pedagogicalFramework: pedagogicalFrameworkSchema.default('CUSTOM'),
+  pedagogicalFramework: pedagogicalFrameworkSchema.optional(),
   notes: z.string().nullish(),
 });
 
@@ -93,6 +94,7 @@ export const learnerPlanResponseSchema = z.object({
   learnerId: z.string().uuid(),
   academicYearId: z.string().uuid(),
   pedagogicalFramework: pedagogicalFrameworkSchema,
+  pedagogicalModelDefinitionId: z.string().uuid().nullish(),
   notes: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -146,7 +148,7 @@ export type ObjectiveResponseDto = z.infer<typeof objectiveResponseSchema>;
 export const applyCurriculumTemplateSchema = z.object({
   learnerId: z.string().uuid(),
   academicYearId: z.string().uuid(),
-  template: pedagogicalFrameworkSchema,
+  template: createPedagogicalModelDefinitionSchema.shape.code,
 });
 
 export type ApplyCurriculumTemplateDto = z.infer<typeof applyCurriculumTemplateSchema>;
