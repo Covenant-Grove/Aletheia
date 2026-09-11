@@ -1311,3 +1311,58 @@ model ActivityDefinitionEvidenceType {
   @@map("activity_definition_evidence_types")
 }
 
+// Theological taxonomy (issue #96 section 14): a data-driven substitute
+// for hardcoding denominations/doctrinal positions in enums. This PR is
+// the shape only -- no real theological content (that's issue #95's
+// scoped-separately content work). A tradition has many positions (plain
+// FK, not a join table -- a position is a specific stance one tradition
+// holds, not shared across traditions); `topic` is a free-form string
+// (e.g. "soteriology", "eschatology") rather than a closed enum, so a new
+// topic is a data value. Nothing here is wired into any content-tagging
+// or read path yet.
+model TheologicalTraditionDefinition {
+  id            String                       @id @default(uuid()) @db.Uuid
+  code          String
+  version       Int                          @default(1)
+  status        DefinitionStatus             @default(DRAFT)
+  schemaVersion String                       @default("1.0.0") @map("schema_version")
+  name          String
+  description   String?
+  metadata      Json                         @default("{}")
+  createdAt     DateTime                     @default(now()) @map("created_at") @db.Timestamptz
+  publishedAt   DateTime?                    @map("published_at") @db.Timestamptz
+  deprecatedAt  DateTime?                    @map("deprecated_at") @db.Timestamptz
+
+  positions     TheologicalPositionDefinition[]
+
+  @@unique([code, version])
+  @@index([code])
+  @@index([status])
+  @@map("theological_tradition_definitions")
+}
+
+model TheologicalPositionDefinition {
+  id            String           @id @default(uuid()) @db.Uuid
+  code          String
+  version       Int              @default(1)
+  status        DefinitionStatus @default(DRAFT)
+  schemaVersion String           @default("1.0.0") @map("schema_version")
+  traditionId   String           @map("tradition_id") @db.Uuid
+  topic         String
+  name          String
+  description   String?
+  metadata      Json             @default("{}")
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  publishedAt   DateTime?        @map("published_at") @db.Timestamptz
+  deprecatedAt  DateTime?        @map("deprecated_at") @db.Timestamptz
+
+  tradition     TheologicalTraditionDefinition @relation(fields: [traditionId], references: [id], onDelete: Restrict)
+
+  @@unique([code, version])
+  @@index([code])
+  @@index([traditionId])
+  @@index([topic])
+  @@index([status])
+  @@map("theological_position_definitions")
+}
+
