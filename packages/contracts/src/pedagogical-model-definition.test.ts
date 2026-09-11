@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createPedagogicalModelDefinitionSchema,
   templateSubjectDefinitionSchema,
+  pedagogicalModelCatalogEntrySchema,
 } from './pedagogical-model-definition.js';
 
 describe('Pedagogical Model Definition Contracts', () => {
@@ -68,5 +69,24 @@ describe('Pedagogical Model Definition Contracts', () => {
     expect(() =>
       createPedagogicalModelDefinitionSchema.parse({ code: 'montessori', name: 'Montessori' }),
     ).toThrow();
+  });
+});
+
+describe('Pedagogical Model Catalog Entry Contract', () => {
+  it('validates a minimal catalog entry', () => {
+    const parsed = pedagogicalModelCatalogEntrySchema.parse({
+      code: 'MONTESSORI',
+      name: 'Montessori',
+    });
+    expect(parsed.code).toBe('MONTESSORI');
+  });
+
+  it('allows a null description', () => {
+    const parsed = pedagogicalModelCatalogEntrySchema.parse({
+      code: 'MONTESSORI',
+      name: 'Montessori',
+      description: null,
+    });
+    expect(parsed.description).toBeNull();
   });
 });

@@ -61,3 +61,18 @@ export const pedagogicalModelDefinitionResponseSchema = z.object({
 });
 
 export type PedagogicalModelDefinitionResponseDto = z.infer<typeof pedagogicalModelDefinitionResponseSchema>;
+
+// Lean, family-facing catalog entry (issue #96 section 35: "UI
+// data-driven" -- a family should be able to discover a new PUBLISHED
+// model without a release). Deliberately excludes id/version/status/
+// metadata/timestamps -- a family choosing a template doesn't need the
+// admin-facing shape, just enough to render an option and apply it by
+// code, the same `code` `applyCurriculumTemplateSchema.template` already
+// accepts.
+export const pedagogicalModelCatalogEntrySchema = z.object({
+  code: z.string(),
+  name: z.string(),
+  description: z.string().nullable().optional(),
+});
+
+export type PedagogicalModelCatalogEntryDto = z.infer<typeof pedagogicalModelCatalogEntrySchema>;

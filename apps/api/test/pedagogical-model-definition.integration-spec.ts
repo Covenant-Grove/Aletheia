@@ -63,4 +63,53 @@ describe('Pedagogical model definition resolver equivalence (real Postgres)', ()
     const after = await prisma.pedagogicalModelDefinition.findMany(query);
     expect(after).toEqual(before);
   });
+
+  describe('listPublishedCatalog (issue #96 section 35, family-facing template catalog)', () => {
+    it('includes every migration-installed framework exactly once', async () => {
+      const catalog = await resolver.listPublishedCatalog();
+      const codes = catalog.map((entry) => entry.code);
+      for (const framework of TEMPLATE_BEARING_FRAMEWORKS) {
+        expect(codes.filter((code) => code === framework)).toHaveLength(1);
+      }
+    });
+
+    it('returns only code/name/description, no admin-facing fields', async () => {
+      const catalog = await resolver.listPublishedCatalog();
+      const montessori = catalog.find((entry) => entry.code === 'MONTESSORI');
+      expect(montessori).toBeDefined();
+      expect(Object.keys(montessori!).sort()).toEqual(['code', 'description', 'name']);
+    });
+
+    it('picks up a brand-new PUBLISHED code with no code change or deploy', async () => {
+      const prisma = app.get(PrismaService);
+      const code = `TEST.CATALOG.${Date.now()}`;
+      await prisma.pedagogicalModelDefinition.create({
+        data: { code, status: 'PUBLISHED', name: 'Catalog-Only Test Model', publishedAt: new Date() },
+      });
+
+      const catalog = await resolver.listPublishedCatalog();
+      expect(catalog.find((entry) => entry.code === code)?.name).toBe('Catalog-Only Test Model');
+    });
+
+    it('excludes DRAFT rows and returns only the latest version per code', async () => {
+      const prisma = app.get(PrismaService);
+      const code = `TEST.CATALOG.VERSIONED.${Date.now()}`;
+      await prisma.pedagogicalModelDefinition.create({
+        data: { code, version: 1, status: 'PUBLISHED', name: 'Old Version', publishedAt: new Date() },
+      });
+      await prisma.pedagogicalModelDefinition.create({
+        data: { code, version: 2, status: 'PUBLISHED', name: 'New Version', publishedAt: new Date() },
+      });
+      const draftCode = `TEST.CATALOG.DRAFT.${Date.now()}`;
+      await prisma.pedagogicalModelDefinition.create({
+        data: { code: draftCode, status: 'DRAFT', name: 'Should Not Appear' },
+      });
+
+      const catalog = await resolver.listPublishedCatalog();
+      const matchingVersioned = catalog.filter((entry) => entry.code === code);
+      expect(matchingVersioned).toHaveLength(1);
+      expect(matchingVersioned[0]?.name).toBe('New Version');
+      expect(catalog.find((entry) => entry.code === draftCode)).toBeUndefined();
+    });
+  });
 });

@@ -23,6 +23,7 @@ import { SubjectCard } from './subject-card';
 import { Can } from '../auth/role-guard';
 
 export interface CurriculumViewProps {
+  familyId: string;
   years: AcademicYearResponseDto[];
   activeYearId: string;
   onSelectYear: (yearId: string) => void;
@@ -30,7 +31,11 @@ export interface CurriculumViewProps {
   objectives: ObjectiveResponseDto[];
   activeLearner: LearnerSummaryDto | null;
   learnerPlan: LearnerPlanResponseDto | null;
-  onApplyTemplate: (template: PedagogicalFramework) => Promise<void>;
+  // Any published pedagogical model catalog code, not just the legacy
+  // PedagogicalFramework enum (issue #96 section 35) -- see
+  // TemplateModal, which fetches the live catalog instead of a hardcoded
+  // list.
+  onApplyTemplate: (template: string) => Promise<void>;
   onCreateSubject: (dto: CreateSubjectDto) => Promise<void>;
   onUpdateSubject: (subjectId: string, dto: UpdateSubjectDto) => Promise<void>;
   onArchiveSubject: (subjectId: string) => void;
@@ -41,6 +46,7 @@ export interface CurriculumViewProps {
 }
 
 export function CurriculumView({
+  familyId,
   years,
   activeYearId,
   onSelectYear,
@@ -278,6 +284,7 @@ export function CurriculumView({
       {/* Modals */}
       <TemplateModal
         isOpen={isTemplateModalOpen}
+        familyId={familyId}
         onClose={() => setIsTemplateModalOpen(false)}
         onApply={onApplyTemplate}
       />

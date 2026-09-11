@@ -149,6 +149,21 @@ describe('Curriculum & Objectives E2E & Multi-Tenant Isolation', () => {
       return { subjectsCount: 5, objectivesCount: 15 };
     });
 
+    // This job's DATABASE_URL is a placeholder (no real Postgres --
+    // that's the postgres-integration job's job) and every other
+    // CurriculumService method here is mocked for the same reason.
+    // listPublishedTemplateCatalog would otherwise hit
+    // PedagogicalModelDefinitionResolver -> real Prisma -> a dead
+    // connection, surfacing as a 500 instead of the intended 200/403/401
+    // assertions -- this is real-DB coverage for
+    // pedagogical-model-definition.integration-spec.ts and this file's
+    // "Multi-Tenant Access Control"-style guard checks, not for exercising
+    // real catalog data here.
+    jest.spyOn(curriculumService, 'listPublishedTemplateCatalog').mockImplementation(async () => [
+      { code: 'MONTESSORI', name: 'Montessori', description: 'Vida Prática e materiais manipuláveis.' },
+      { code: 'CLASSICAL_TRIVIUM', name: 'Educação Clássica (Trívio)', description: null },
+    ]);
+
     // 4. ObjectiveService mocking
     const objectiveService = app.get(ObjectiveService);
     jest.spyOn(objectiveService, 'createObjective').mockImplementation(async (familyId, dto) => {
@@ -316,6 +331,42 @@ describe('Curriculum & Objectives E2E & Multi-Tenant Isolation', () => {
 
       expect(res.status).toBe(201);
       expect(res.body.subjectsCount).toBe(5);
+    });
+  });
+
+  // Issue #96 section 35: a family discovers a new PUBLISHED pedagogical
+  // model without a release. Real Postgres data (migration-seeded base
+  // frameworks), real FamilyTenantGuard -- not mocked -- to prove the
+  // reused guard denies cross-family access exactly like every other
+  // route on this controller.
+  describe('Template Catalog', () => {
+    it('lists published pedagogical model templates for family A', async () => {
+      const res = await supertest(app.getHttpServer())
+        .get(`/api/v1/families/${familyAId}/curriculum/templates/catalog`)
+        .set('Authorization', `Bearer ${guardianAToken}`);
+
+      expect(res.status).toBe(200);
+      const codes = res.body.map((entry: { code: string }) => entry.code);
+      expect(codes).toEqual(expect.arrayContaining(['MONTESSORI', 'CLASSICAL_TRIVIUM']));
+      for (const entry of res.body) {
+        expect(Object.keys(entry).sort()).toEqual(['code', 'description', 'name']);
+      }
+    });
+
+    it('denies Guardian A access to Family B template catalog', async () => {
+      const res = await supertest(app.getHttpServer())
+        .get(`/api/v1/families/${familyBId}/curriculum/templates/catalog`)
+        .set('Authorization', `Bearer ${guardianAToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('rejects an unauthenticated request', async () => {
+      const res = await supertest(app.getHttpServer()).get(
+        `/api/v1/families/${familyAId}/curriculum/templates/catalog`,
+      );
+
+      expect(res.status).toBe(401);
     });
   });
 

@@ -10,7 +10,6 @@ import type {
   LearnerSummaryDto,
   ObjectiveResponseDto,
   ObjectiveStatus,
-  PedagogicalFramework,
   SubjectResponseDto,
   UpdateObjectiveDto,
   UpdateSubjectDto,
@@ -138,7 +137,7 @@ export default function CurriculumPage() {
 
   const activeLearner = learners.find((l) => l.id === activeLearnerId) || null;
 
-  const handleApplyTemplate = async (template: PedagogicalFramework) => {
+  const handleApplyTemplate = async (template: string) => {
     if (!familyId || !activeLearnerId || !activeYearId) return;
     await fetch(`/api/v1/families/${familyId}/curriculum/templates/apply`, {
       method: "POST",
@@ -298,6 +297,7 @@ export default function CurriculumPage() {
         <div style={{ padding: "2rem", textAlign: "center" }}>Carregando plano curricular...</div>
       ) : (
         <CurriculumView
+          familyId={familyId ?? ''}
           years={years}
           activeYearId={activeYearId}
           onSelectYear={setActiveYearId}
