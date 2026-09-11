@@ -319,6 +319,42 @@ describe('Curriculum & Objectives E2E & Multi-Tenant Isolation', () => {
     });
   });
 
+  // Issue #96 section 35: a family discovers a new PUBLISHED pedagogical
+  // model without a release. Real Postgres data (migration-seeded base
+  // frameworks), real FamilyTenantGuard -- not mocked -- to prove the
+  // reused guard denies cross-family access exactly like every other
+  // route on this controller.
+  describe('Template Catalog', () => {
+    it('lists published pedagogical model templates for family A', async () => {
+      const res = await supertest(app.getHttpServer())
+        .get(`/api/v1/families/${familyAId}/curriculum/templates/catalog`)
+        .set('Authorization', `Bearer ${guardianAToken}`);
+
+      expect(res.status).toBe(200);
+      const codes = res.body.map((entry: { code: string }) => entry.code);
+      expect(codes).toEqual(expect.arrayContaining(['MONTESSORI', 'CLASSICAL_TRIVIUM']));
+      for (const entry of res.body) {
+        expect(Object.keys(entry).sort()).toEqual(['code', 'description', 'name']);
+      }
+    });
+
+    it('denies Guardian A access to Family B template catalog', async () => {
+      const res = await supertest(app.getHttpServer())
+        .get(`/api/v1/families/${familyBId}/curriculum/templates/catalog`)
+        .set('Authorization', `Bearer ${guardianAToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('rejects an unauthenticated request', async () => {
+      const res = await supertest(app.getHttpServer()).get(
+        `/api/v1/families/${familyAId}/curriculum/templates/catalog`,
+      );
+
+      expect(res.status).toBe(401);
+    });
+  });
+
   describe('Learning Objectives CRUD', () => {
     it('creates, filters, completes and deletes learning objectives', async () => {
       const yearId = '00000000-0000-4000-8000-000000000099';

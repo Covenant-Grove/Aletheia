@@ -9,6 +9,7 @@ import type {
   CreateAcademicYearDto,
   CreateSubjectDto,
   LearnerPlanResponseDto,
+  PedagogicalModelCatalogEntryDto,
   SubjectResponseDto,
   UpdateSubjectDto,
   UpsertLearnerPlanDto,
@@ -113,6 +114,14 @@ export class CurriculumService implements CurriculumPublicApi {
     return this.curriculumRepo.applyPublishedTemplate(
       familyId, dto, definition, legacy.success ? legacy.data : 'CUSTOM',
     );
+  }
+
+  // Family-facing template catalog (issue #96 section 35): lets the UI
+  // discover a new PUBLISHED pedagogical model without a release --
+  // distinct from the platform-admin CRUD, which requires
+  // PlatformAdminGuard and returns the full admin-facing shape.
+  async listPublishedTemplateCatalog(): Promise<PedagogicalModelCatalogEntryDto[]> {
+    return this.modelResolver.listPublishedCatalog();
   }
 
   async getLearnerCurriculumSummary(

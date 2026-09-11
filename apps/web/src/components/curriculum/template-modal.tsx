@@ -1,19 +1,54 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AletheiaIcon, Button, Modal } from '@aletheia/ui';
-import type { PedagogicalFramework } from '@aletheia/contracts';
+import type { PedagogicalModelCatalogEntryDto } from '@aletheia/contracts';
 
 export interface TemplateModalProps {
   isOpen: boolean;
+  familyId: string;
   onClose: () => void;
-  onApply: (template: PedagogicalFramework) => Promise<void>;
+  onApply: (template: string) => Promise<void>;
 }
 
-export function TemplateModal({ isOpen, onClose, onApply }: TemplateModalProps) {
-  const [selectedTemplate, setSelectedTemplate] = useState<PedagogicalFramework>('CLASSICAL_TRIVIUM');
+// Catalog entries have no per-model icon field (issue #96 Fase 0 didn't
+// add one, and adding one just for this would be scope creep for this
+// slice) -- every catalog-driven option renders with the same generic
+// icon rather than inventing an icon name that isn't registered in
+// @aletheia/ui.
+const CATALOG_ICON = 'graduation-cap';
+
+export function TemplateModal({ isOpen, familyId, onClose, onApply }: TemplateModalProps) {
+  const [templates, setTemplates] = useState<PedagogicalModelCatalogEntryDto[]>([]);
+  const [loadingCatalog, setLoadingCatalog] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let cancelled = false;
+    setLoadingCatalog(true);
+    fetch(`/api/v1/families/${familyId}/curriculum/templates/catalog`, { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: PedagogicalModelCatalogEntryDto[]) => {
+        if (cancelled) return;
+        setTemplates(data);
+        setSelectedTemplate((current) => current || data[0]?.code || '');
+      })
+      .catch(() => {
+        if (!cancelled) setTemplates([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingCatalog(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, familyId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedTemplate) return;
     setLoading(true);
     try {
       await onApply(selectedTemplate);
@@ -23,110 +58,89 @@ export function TemplateModal({ isOpen, onClose, onApply }: TemplateModalProps) 
     }
   };
 
-  const templates: Array<{ id: PedagogicalFramework; title: string; desc: string; icon: React.ReactNode }> = [
-    {
-      id: 'CLASSICAL_TRIVIUM',
-      title: 'Educação Clássica (Trívio)',
-      desc: 'Foco na fase gramatical: Português, Latim, Aritmética Lógica, História Ocidental Antiga, Ciências e Literatura Poética.',
-      icon: <AletheiaIcon name="landmark" size={18} style={{ color: 'var(--color-indigo-700)' }} />,
-    },
-    {
-      id: 'CHARLOTTE_MASON',
-      title: 'Abordagem Charlotte Mason',
-      desc: 'Foco em Livros Vivos (Living Books), Estudo da Natureza, Narração, Picture Study, Trabalhos Manuais e Formação de Hábitos.',
-      icon: <AletheiaIcon name="sprout" size={18} style={{ color: 'var(--color-emerald-600)' }} />,
-    },
-    {
-      id: 'TRADITIONAL',
-      title: 'Currículo Tradicional Estruturado',
-      desc: 'Disciplinas fundamentais organizadas: Português, Matemática, História, Geografia e Ciências Naturais.',
-      icon: <AletheiaIcon name="book-open" size={18} style={{ color: 'var(--color-amber-600)' }} />,
-    },
-    {
-      id: 'UNIT_STUDIES',
-      title: 'Unit Studies (Estudo por Temas)',
-      desc: 'Um tema central explorado de forma interdisciplinar: literatura, matemática, ciências e história conectados ao mesmo assunto.',
-      icon: <AletheiaIcon name="layers" size={18} style={{ color: 'var(--color-indigo-700)' }} />,
-    },
-    {
-      id: 'MONTESSORI',
-      title: 'Montessori',
-      desc: 'Vida Prática, Educação Sensorial, Linguagem, Matemática Concreta e Educação Cósmica através de materiais manipuláveis e autonomia.',
-      icon: <AletheiaIcon name="compass" size={18} style={{ color: 'var(--color-emerald-600)' }} />,
-    },
-    {
-      id: 'PROJECT_BASED',
-      title: 'Aprendizagem por Projetos',
-      desc: 'Um projeto real conduz o aprendizado: pesquisa, comunicação e disciplinas aplicadas ao problema em andamento.',
-      icon: <AletheiaIcon name="lightbulb" size={18} style={{ color: 'var(--color-amber-600)' }} />,
-    },
-    {
-      id: 'GUIDED_UNSCHOOLING',
-      title: 'Unschooling Guiado',
-      desc: 'Interesses e curiosidades do próprio aluno conduzem o aprendizado, com acompanhamento e mediação ativa dos pais.',
-      icon: <AletheiaIcon name="sparkles" size={18} style={{ color: 'var(--color-rose-600)' }} />,
-    },
-    {
-      id: 'ECLECTIC',
-      title: 'Eclético',
-      desc: 'Combina livremente métodos e materiais de diferentes abordagens, ajustando-se ao que funciona melhor para o aluno.',
-      icon: <AletheiaIcon name="palette" size={18} style={{ color: 'var(--color-indigo-700)' }} />,
-    },
-  ];
-
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title="Aplicar Modelo Pedagógico"
-      description="Escolha uma abordagem para gerar disciplinas sugeridas e objetivos de aprendizagem iniciais. Todas as opções incluem também Artes/Ofícios/Vocação, Fé e Teologia, e Vida Prática e Resiliência:"
+      description="Escolha uma abordagem para gerar disciplinas sugeridas e objetivos de aprendizagem iniciais."
       maxWidth="lg"
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={loading}>
             Cancelar
           </Button>
-          <Button type="submit" form="template-form" data-testid="apply-template-btn" isLoading={loading}>
+          <Button
+            type="submit"
+            form="template-form"
+            data-testid="apply-template-btn"
+            isLoading={loading}
+            disabled={!selectedTemplate}
+          >
             Aplicar Modelo
           </Button>
         </>
       }
     >
       <form id="template-form" onSubmit={handleSubmit}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {templates.map((t) => (
-            <label
-              key={t.id}
-              data-testid={`template-option-${t.id}`}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '0.75rem',
-                padding: '1rem',
-                borderRadius: 'var(--radius-md)',
-                border: `2px solid ${selectedTemplate === t.id ? 'var(--forest)' : 'var(--border-light)'}`,
-                backgroundColor: selectedTemplate === t.id ? 'var(--color-indigo-50)' : 'var(--bg-surface)',
-                cursor: 'pointer',
-              }}
-            >
-              <input
-                type="radio"
-                name="pedagogical-template"
-                value={t.id}
-                checked={selectedTemplate === t.id}
-                onChange={() => setSelectedTemplate(t.id)}
-                style={{ marginTop: '0.25rem' }}
-              />
-              <div>
-                <div style={{ fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span>{t.icon}</span>
-                  <span>{t.title}</span>
+        {loadingCatalog ? (
+          <div style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+            Carregando modelos disponíveis...
+          </div>
+        ) : templates.length === 0 ? (
+          <div style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+            Nenhum modelo pedagógico publicado está disponível no momento.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {templates.map((t) => (
+              <label
+                key={t.code}
+                data-testid={`template-option-${t.code}`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.75rem',
+                  padding: '1rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: `2px solid ${selectedTemplate === t.code ? 'var(--forest)' : 'var(--border-light)'}`,
+                  backgroundColor: selectedTemplate === t.code ? 'var(--color-indigo-50)' : 'var(--bg-surface)',
+                  cursor: 'pointer',
+                }}
+              >
+                <input
+                  type="radio"
+                  name="pedagogical-template"
+                  value={t.code}
+                  checked={selectedTemplate === t.code}
+                  onChange={() => setSelectedTemplate(t.code)}
+                  style={{ marginTop: '0.25rem' }}
+                />
+                <div>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                    }}
+                  >
+                    <span>
+                      <AletheiaIcon name={CATALOG_ICON} size={18} style={{ color: 'var(--color-indigo-700)' }} />
+                    </span>
+                    <span>{t.name}</span>
+                  </div>
+                  {t.description ? (
+                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                      {t.description}
+                    </div>
+                  ) : null}
                 </div>
-                <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{t.desc}</div>
-              </div>
-            </label>
-          ))}
-        </div>
+              </label>
+            ))}
+          </div>
+        )}
       </form>
     </Modal>
   );

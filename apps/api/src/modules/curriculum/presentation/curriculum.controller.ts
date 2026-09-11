@@ -23,6 +23,7 @@ import {
   type CreateAcademicYearDto,
   type CreateSubjectDto,
   type LearnerPlanResponseDto,
+  type PedagogicalModelCatalogEntryDto,
   type SubjectResponseDto,
   type UpdateSubjectDto,
   type UpsertLearnerPlanDto,
@@ -118,6 +119,16 @@ export class CurriculumController {
     @Query('academicYearId') academicYearId: string,
   ): Promise<LearnerPlanResponseDto | null> {
     return this.curriculumService.getLearnerPlan(familyId, learnerId, academicYearId);
+  }
+
+  // Template Catalog (issue #96 section 35: UI data-driven -- a family
+  // discovers a new PUBLISHED pedagogical model without a release. NOT the
+  // platform-admin CRUD -- same guard as every other route on this
+  // controller, no platform-admin access required.)
+  @Get('templates/catalog')
+  @ApiOperation({ summary: 'List published pedagogical model templates a family can apply' })
+  async listTemplateCatalog(): Promise<PedagogicalModelCatalogEntryDto[]> {
+    return this.curriculumService.listPublishedTemplateCatalog();
   }
 
   // Apply Template Accelerator
