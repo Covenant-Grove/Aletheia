@@ -1,5 +1,5 @@
 import { CurriculumService } from './curriculum.service.js';
-import { CurriculumTemplateEngine } from '../infrastructure/curriculum-template.engine.js';
+
 import { AcademicYearEntity } from '../domain/academic-year.entity.js';
 import { SubjectEntity } from '../domain/subject.entity.js';
 import { LearnerCurriculumPlanEntity } from '../domain/learner-plan.entity.js';
@@ -8,7 +8,7 @@ describe('CurriculumService', () => {
   let service: CurriculumService;
   let curriculumRepo: any;
   let objectiveRepo: any;
-  let templateEngine: CurriculumTemplateEngine;
+  let resolver: any;
 
   const FAMILY_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
   const LEARNER_ID = 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22';
@@ -74,9 +74,10 @@ describe('CurriculumService', () => {
       create: jest.fn().mockResolvedValue({ id: 'o-1' }),
     };
 
-    templateEngine = new CurriculumTemplateEngine();
+    resolver = { resolvePublished: jest.fn().mockResolvedValue({ id: 'definition-1', subjects: [{ name: 'Catalog subject', color: '#123456', description: 'Catalog', starterObjectives: ['Catalog objective'] }] }) };
+    curriculumRepo.applyPublishedTemplate = jest.fn().mockResolvedValue({ subjectsCount: 1, objectivesCount: 1 });
 
-    service = new CurriculumService(curriculumRepo, objectiveRepo, templateEngine);
+    service = new CurriculumService(curriculumRepo, objectiveRepo, resolver);
   });
 
   it('creates an academic year', async () => {
@@ -105,9 +106,11 @@ describe('CurriculumService', () => {
     });
     expect(res.subjectsCount).toBeGreaterThan(0);
     expect(res.objectivesCount).toBeGreaterThan(0);
-    expect(curriculumRepo.upsertLearnerPlan).toHaveBeenCalledWith(
+    expect(curriculumRepo.applyPublishedTemplate).toHaveBeenCalledWith(
       FAMILY_ID,
-      expect.objectContaining({ pedagogicalFramework: 'CLASSICAL_TRIVIUM' }),
+      expect.objectContaining({ template: 'CLASSICAL_TRIVIUM' }),
+      expect.objectContaining({ id: 'definition-1' }),
+      'CLASSICAL_TRIVIUM',
     );
   });
 
@@ -119,9 +122,32 @@ describe('CurriculumService', () => {
     });
     expect(res.subjectsCount).toBeGreaterThan(0);
     expect(res.objectivesCount).toBeGreaterThan(0);
-    expect(curriculumRepo.upsertLearnerPlan).toHaveBeenCalledWith(
+    expect(curriculumRepo.applyPublishedTemplate).toHaveBeenCalledWith(
       FAMILY_ID,
-      expect.objectContaining({ pedagogicalFramework: 'MONTESSORI' }),
+      expect.objectContaining({ template: 'MONTESSORI' }),
+      expect.objectContaining({ id: 'definition-1' }),
+      'MONTESSORI',
     );
+  });
+});
+
+describe('published catalog application', () => {
+  it('rejects unavailable definitions before any writes', async () => {
+    const repo = { applyPublishedTemplate: jest.fn(), upsertLearnerPlan: jest.fn() };
+    const resolver = { resolvePublished: jest.fn().mockResolvedValue(null) };
+    const service = new CurriculumService(repo as any, {} as any, resolver as any);
+    await expect(service.applyTemplate('family', { learnerId: 'learner', academicYearId: 'year', template: 'NEW_MODEL' })).rejects.toThrow('Published pedagogical model not found');
+    expect(repo.applyPublishedTemplate).not.toHaveBeenCalled();
+    expect(repo.upsertLearnerPlan).not.toHaveBeenCalled();
+  });
+  it('uses CUSTOM only for the compatibility field of new catalog codes', async () => {
+    const definition = { id: 'version-id', subjects: [] };
+    const repo = { applyPublishedTemplate: jest.fn().mockResolvedValue({ subjectsCount: 0, objectivesCount: 0 }) };
+    const resolver = { resolvePublished: jest.fn().mockResolvedValue(definition) };
+    const service = new CurriculumService(repo as any, {} as any, resolver as any);
+    const dto = { learnerId: 'learner', academicYearId: 'year', template: 'NEW_MODEL' };
+    await service.applyTemplate('family', dto);
+    expect(resolver.resolvePublished).toHaveBeenCalledWith('NEW_MODEL');
+    expect(repo.applyPublishedTemplate).toHaveBeenCalledWith('family', dto, definition, 'CUSTOM');
   });
 });

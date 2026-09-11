@@ -3,12 +3,9 @@ import { PrismaService } from '../../../platform/database/prisma.service.js';
 import { CurriculumTemplateEngine } from './curriculum-template.engine.js';
 import { buildPedagogicalModelDefinitionSeedRows } from './pedagogical-model-definition.seed-data.js';
 
-// Upserts the 8 pedagogical-model-definition rows described in
-// pedagogical-model-definition.seed-data.ts. Idempotent: re-running it
-// (e.g. after CurriculumTemplateEngine content changes) updates the
-// PUBLISHED version-1 row in place rather than creating duplicates, since
-// this is still the strangler-fig phase and there is no admin UI yet to
-// publish a new version through.
+// Installs missing baseline models only. Once a version exists, its content,
+// lifecycle and publication timestamp belong to the catalog and must survive
+// seed reruns. Content changes require a new version through the admin API.
 @Injectable()
 export class PedagogicalModelDefinitionSeeder {
   constructor(
@@ -32,13 +29,7 @@ export class PedagogicalModelDefinitionSeeder {
           metadata: { subjects: row.subjects },
           publishedAt: now,
         },
-        update: {
-          status: 'PUBLISHED',
-          name: row.name,
-          description: row.description,
-          metadata: { subjects: row.subjects },
-          publishedAt: now,
-        },
+        update: {},
       });
     }
 

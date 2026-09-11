@@ -419,6 +419,8 @@ model LearnerCurriculumPlan {
   learnerId            String               @map("learner_id") @db.Uuid
   academicYearId       String               @map("academic_year_id") @db.Uuid
   pedagogicalFramework PedagogicalFramework @default(CUSTOM) @map("pedagogical_framework")
+  pedagogicalModelDefinitionId String? @map("pedagogical_model_definition_id") @db.Uuid
+  pedagogicalModelDefinition PedagogicalModelDefinition? @relation(fields: [pedagogicalModelDefinitionId], references: [id], onDelete: Restrict)
   notes                String?
   createdAt            DateTime             @default(now()) @map("created_at") @db.Timestamptz
   updatedAt            DateTime             @updatedAt @map("updated_at") @db.Timestamptz
@@ -1093,6 +1095,7 @@ model PedagogicalModelDefinition {
   deprecatedAt  DateTime?        @map("deprecated_at") @db.Timestamptz
 
   curricula     CurriculumDefinition[]
+  learnerPlans LearnerCurriculumPlan[]
 
   @@unique([code, version])
   @@index([code])
