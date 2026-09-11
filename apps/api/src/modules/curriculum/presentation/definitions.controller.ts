@@ -19,6 +19,7 @@ import {
   addActivityDefinitionEvidenceTypeSchema,
   createTheologicalTraditionDefinitionSchema,
   createTheologicalPositionDefinitionSchema,
+  createProgressionPolicySchema,
   transitionDefinitionStatusSchema,
   type CreateLearningDomainOutput,
   type LearningDomainResponseDto,
@@ -56,6 +57,8 @@ import {
   type TheologicalTraditionDefinitionResponseDto,
   type CreateTheologicalPositionDefinitionOutput,
   type TheologicalPositionDefinitionResponseDto,
+  type CreateProgressionPolicyOutput,
+  type ProgressionPolicyResponseDto,
   type TransitionDefinitionStatusDto,
 } from '@aletheia/contracts';
 import { JwtAuthGuard, PlatformAdminGuard } from '../../../platform/auth/index.js';
@@ -477,5 +480,30 @@ export class DefinitionsController {
     @Body(new ZodValidationPipe(transitionDefinitionStatusSchema)) dto: TransitionDefinitionStatusDto,
   ): Promise<TheologicalPositionDefinitionResponseDto> {
     return this.definitionsService.transitionTheologicalPositionDefinitionStatus(id, dto.status);
+  }
+
+  // Progression Policies
+  @Post('progression-policies')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a progression policy' })
+  async createProgressionPolicy(
+    @Body(new ZodValidationPipe(createProgressionPolicySchema)) dto: CreateProgressionPolicyOutput,
+  ): Promise<ProgressionPolicyResponseDto> {
+    return this.definitionsService.createProgressionPolicy(dto);
+  }
+
+  @Get('progression-policies')
+  @ApiOperation({ summary: 'List progression policies' })
+  async listProgressionPolicies(): Promise<ProgressionPolicyResponseDto[]> {
+    return this.definitionsService.listProgressionPolicies();
+  }
+
+  @Patch('progression-policies/:id/status')
+  @ApiOperation({ summary: 'Transition a progression policy status' })
+  async transitionProgressionPolicyStatus(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(transitionDefinitionStatusSchema)) dto: TransitionDefinitionStatusDto,
+  ): Promise<ProgressionPolicyResponseDto> {
+    return this.definitionsService.transitionProgressionPolicyStatus(id, dto.status);
   }
 }
