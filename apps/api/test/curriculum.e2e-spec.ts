@@ -149,6 +149,21 @@ describe('Curriculum & Objectives E2E & Multi-Tenant Isolation', () => {
       return { subjectsCount: 5, objectivesCount: 15 };
     });
 
+    // This job's DATABASE_URL is a placeholder (no real Postgres --
+    // that's the postgres-integration job's job) and every other
+    // CurriculumService method here is mocked for the same reason.
+    // listPublishedTemplateCatalog would otherwise hit
+    // PedagogicalModelDefinitionResolver -> real Prisma -> a dead
+    // connection, surfacing as a 500 instead of the intended 200/403/401
+    // assertions -- this is real-DB coverage for
+    // pedagogical-model-definition.integration-spec.ts and this file's
+    // "Multi-Tenant Access Control"-style guard checks, not for exercising
+    // real catalog data here.
+    jest.spyOn(curriculumService, 'listPublishedTemplateCatalog').mockImplementation(async () => [
+      { code: 'MONTESSORI', name: 'Montessori', description: 'Vida Prática e materiais manipuláveis.' },
+      { code: 'CLASSICAL_TRIVIUM', name: 'Educação Clássica (Trívio)', description: null },
+    ]);
+
     // 4. ObjectiveService mocking
     const objectiveService = app.get(ObjectiveService);
     jest.spyOn(objectiveService, 'createObjective').mockImplementation(async (familyId, dto) => {
