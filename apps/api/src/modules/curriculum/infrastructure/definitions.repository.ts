@@ -18,6 +18,7 @@ import type {
   ActivityDefinitionEvidenceType,
   TheologicalTraditionDefinition,
   TheologicalPositionDefinition,
+  ProgressionPolicy,
   Prisma,
 } from '@prisma/client';
 import type {
@@ -39,6 +40,7 @@ import type {
   AddActivityDefinitionEvidenceTypeOutput,
   CreateTheologicalTraditionDefinitionOutput,
   CreateTheologicalPositionDefinitionOutput,
+  CreateProgressionPolicyOutput,
 } from '@aletheia/contracts';
 import { PrismaService } from '../../../platform/database/prisma.service.js';
 import type { DefinitionStatusUpdate } from '../application/definition-status-transition.js';
@@ -506,5 +508,36 @@ export class DefinitionsRepository {
     update: DefinitionStatusUpdate,
   ): Promise<TheologicalPositionDefinition> {
     return this.prisma.theologicalPositionDefinition.update({ where: { id }, data: update });
+  }
+
+  // Progression Policy
+  createProgressionPolicy(dto: CreateProgressionPolicyOutput): Promise<ProgressionPolicy> {
+    return this.prisma.progressionPolicy.create({
+      data: {
+        code: dto.code,
+        version: dto.version,
+        status: dto.status,
+        schemaVersion: dto.schemaVersion,
+        name: dto.name,
+        description: dto.description ?? null,
+        policyType: dto.policyType,
+        rules: dto.rules as Prisma.InputJsonValue,
+        competencyDefinitionId: dto.competencyDefinitionId ?? null,
+        curriculumDefinitionId: dto.curriculumDefinitionId ?? null,
+        metadata: dto.metadata as Prisma.InputJsonValue,
+      },
+    });
+  }
+
+  listProgressionPolicies(): Promise<ProgressionPolicy[]> {
+    return this.prisma.progressionPolicy.findMany({ orderBy: [{ code: 'asc' }, { version: 'desc' }] });
+  }
+
+  findProgressionPolicyById(id: string): Promise<ProgressionPolicy | null> {
+    return this.prisma.progressionPolicy.findUnique({ where: { id } });
+  }
+
+  updateProgressionPolicyStatus(id: string, update: DefinitionStatusUpdate): Promise<ProgressionPolicy> {
+    return this.prisma.progressionPolicy.update({ where: { id }, data: update });
   }
 }

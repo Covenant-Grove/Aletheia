@@ -958,6 +958,7 @@ model CompetencyDefinition {
   rubrics       RubricDefinition[]
   curriculumLinks CurriculumDefinitionCompetency[]
   activityLinks ActivityDefinitionCompetency[]
+  progressionPolicies ProgressionPolicy[]
 
   @@unique([code, version])
   @@index([code])
@@ -1166,6 +1167,7 @@ model CurriculumDefinition {
   competencies  CurriculumDefinitionCompetency[]
   rubrics       CurriculumDefinitionRubric[]
   activities    CurriculumDefinitionActivity[]
+  progressionPolicies ProgressionPolicy[]
 
   @@unique([code, version])
   @@index([code])
@@ -1426,3 +1428,45 @@ model TheologicalProfile {
   @@map("theological_profiles")
 }
 
+// Progression policy (issue #96 Fase 2, section 11): platform/family
+// configuration, so it follows the Definition/Version pattern like every
+// other catalog table -- NOT user data (contrast with EvidenceSubmission/
+// AssessmentResult, a separate slice of this same Fase 2 work).
+// `policyType` is a free-form string
+// (e.g. "MASTERY", "HOURS", "PROJECTS", "EVIDENCE_COUNT",
+// "MENTOR_APPROVAL"), not a closed enum, per this issue's own anti-
+// hardcode principle -- a new progression model is a data value. `rules`
+// is JSONB because its shape genuinely varies per policyType (hours
+// thresholds vs. mastery levels vs. mentor-approval workflow are
+// structurally different), which is exactly the "extensible, non-
+// relational" case section 30 carves out for JSONB. Optionally scoped to
+// one CompetencyDefinition or CurriculumDefinition (nullable FKs, SetNull
+// on delete -- same choice as RubricDefinition.competencyId, since this
+// is platform config, not user data whose history must never be lost).
+model ProgressionPolicy {
+  id                     String                @id @default(uuid()) @db.Uuid
+  code                   String
+  version                Int                   @default(1)
+  status                 DefinitionStatus      @default(DRAFT)
+  schemaVersion          String                @default("1.0.0") @map("schema_version")
+  name                   String
+  description            String?
+  policyType             String                @map("policy_type")
+  rules                  Json                  @default("{}")
+  competencyDefinitionId String?               @map("competency_definition_id") @db.Uuid
+  curriculumDefinitionId String?               @map("curriculum_definition_id") @db.Uuid
+  metadata               Json                  @default("{}")
+  createdAt              DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  publishedAt            DateTime?             @map("published_at") @db.Timestamptz
+  deprecatedAt           DateTime?             @map("deprecated_at") @db.Timestamptz
+
+  competencyDefinition CompetencyDefinition? @relation(fields: [competencyDefinitionId], references: [id], onDelete: SetNull)
+  curriculumDefinition CurriculumDefinition? @relation(fields: [curriculumDefinitionId], references: [id], onDelete: SetNull)
+
+  @@unique([code, version])
+  @@index([code])
+  @@index([status])
+  @@index([competencyDefinitionId])
+  @@index([curriculumDefinitionId])
+  @@map("progression_policies")
+}

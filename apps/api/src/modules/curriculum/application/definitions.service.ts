@@ -19,6 +19,7 @@ import type {
   ActivityDefinitionEvidenceType,
   TheologicalTraditionDefinition,
   TheologicalPositionDefinition,
+  ProgressionPolicy,
 } from '@prisma/client';
 import type {
   CreateLearningDomainOutput,
@@ -57,6 +58,8 @@ import type {
   TheologicalTraditionDefinitionResponseDto,
   CreateTheologicalPositionDefinitionOutput,
   TheologicalPositionDefinitionResponseDto,
+  CreateProgressionPolicyOutput,
+  ProgressionPolicyResponseDto,
   DefinitionStatus,
 } from '@aletheia/contracts';
 import { DefinitionsRepository } from '../infrastructure/definitions.repository.js';
@@ -449,6 +452,28 @@ export class DefinitionsService {
     return this.toTheologicalPositionDefinitionDto(row);
   }
 
+  // Progression Policy
+  async createProgressionPolicy(dto: CreateProgressionPolicyOutput): Promise<ProgressionPolicyResponseDto> {
+    const row = await this.withWriteErrorMapping(() => this.repository.createProgressionPolicy(dto));
+    return this.toProgressionPolicyDto(row);
+  }
+
+  async listProgressionPolicies(): Promise<ProgressionPolicyResponseDto[]> {
+    const rows = await this.repository.listProgressionPolicies();
+    return rows.map((row) => this.toProgressionPolicyDto(row));
+  }
+
+  async transitionProgressionPolicyStatus(
+    id: string,
+    status: DefinitionStatus,
+  ): Promise<ProgressionPolicyResponseDto> {
+    const existing = await this.repository.findProgressionPolicyById(id);
+    if (!existing) throw new NotFoundException('Progression policy not found.');
+    const update = computeStatusTransition(existing.status as DefinitionStatus, status);
+    const row = await this.repository.updateProgressionPolicyStatus(id, update);
+    return this.toProgressionPolicyDto(row);
+  }
+
   // Helpers
   private async requireCurriculumDefinition(id: string): Promise<void> {
     const existing = await this.repository.findCurriculumDefinitionById(id);
@@ -755,6 +780,26 @@ export class DefinitionsService {
       topic: row.topic,
       name: row.name,
       description: row.description,
+      metadata: row.metadata as Record<string, unknown>,
+      createdAt: row.createdAt.toISOString(),
+      publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
+      deprecatedAt: row.deprecatedAt ? row.deprecatedAt.toISOString() : null,
+    };
+  }
+
+  private toProgressionPolicyDto(row: ProgressionPolicy): ProgressionPolicyResponseDto {
+    return {
+      id: row.id,
+      code: row.code,
+      version: row.version,
+      status: row.status as DefinitionStatus,
+      schemaVersion: row.schemaVersion,
+      name: row.name,
+      description: row.description,
+      policyType: row.policyType,
+      rules: row.rules as Record<string, unknown>,
+      competencyDefinitionId: row.competencyDefinitionId,
+      curriculumDefinitionId: row.curriculumDefinitionId,
       metadata: row.metadata as Record<string, unknown>,
       createdAt: row.createdAt.toISOString(),
       publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
