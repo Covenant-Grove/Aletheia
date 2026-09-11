@@ -16,6 +16,8 @@ import type {
   ActivityDefinition,
   ActivityDefinitionCompetency,
   ActivityDefinitionEvidenceType,
+  TheologicalTraditionDefinition,
+  TheologicalPositionDefinition,
   Prisma,
 } from '@prisma/client';
 import type {
@@ -35,6 +37,8 @@ import type {
   CreateActivityDefinitionOutput,
   AddActivityDefinitionCompetencyOutput,
   AddActivityDefinitionEvidenceTypeOutput,
+  CreateTheologicalTraditionDefinitionOutput,
+  CreateTheologicalPositionDefinitionOutput,
 } from '@aletheia/contracts';
 import { PrismaService } from '../../../platform/database/prisma.service.js';
 import type { DefinitionStatusUpdate } from '../application/definition-status-transition.js';
@@ -432,5 +436,75 @@ export class DefinitionsRepository {
 
   listActivityDefinitionEvidenceTypes(activityId: string): Promise<ActivityDefinitionEvidenceType[]> {
     return this.prisma.activityDefinitionEvidenceType.findMany({ where: { activityId } });
+  }
+
+  // Theological Tradition Definition
+  createTheologicalTraditionDefinition(
+    dto: CreateTheologicalTraditionDefinitionOutput,
+  ): Promise<TheologicalTraditionDefinition> {
+    return this.prisma.theologicalTraditionDefinition.create({
+      data: {
+        code: dto.code,
+        version: dto.version,
+        status: dto.status,
+        schemaVersion: dto.schemaVersion,
+        name: dto.name,
+        description: dto.description ?? null,
+        metadata: dto.metadata as Prisma.InputJsonValue,
+      },
+    });
+  }
+
+  listTheologicalTraditionDefinitions(): Promise<TheologicalTraditionDefinition[]> {
+    return this.prisma.theologicalTraditionDefinition.findMany({
+      orderBy: [{ code: 'asc' }, { version: 'desc' }],
+    });
+  }
+
+  findTheologicalTraditionDefinitionById(id: string): Promise<TheologicalTraditionDefinition | null> {
+    return this.prisma.theologicalTraditionDefinition.findUnique({ where: { id } });
+  }
+
+  updateTheologicalTraditionDefinitionStatus(
+    id: string,
+    update: DefinitionStatusUpdate,
+  ): Promise<TheologicalTraditionDefinition> {
+    return this.prisma.theologicalTraditionDefinition.update({ where: { id }, data: update });
+  }
+
+  // Theological Position Definition
+  createTheologicalPositionDefinition(
+    dto: CreateTheologicalPositionDefinitionOutput,
+  ): Promise<TheologicalPositionDefinition> {
+    return this.prisma.theologicalPositionDefinition.create({
+      data: {
+        code: dto.code,
+        version: dto.version,
+        status: dto.status,
+        schemaVersion: dto.schemaVersion,
+        traditionId: dto.traditionId,
+        topic: dto.topic,
+        name: dto.name,
+        description: dto.description ?? null,
+        metadata: dto.metadata as Prisma.InputJsonValue,
+      },
+    });
+  }
+
+  listTheologicalPositionDefinitions(): Promise<TheologicalPositionDefinition[]> {
+    return this.prisma.theologicalPositionDefinition.findMany({
+      orderBy: [{ code: 'asc' }, { version: 'desc' }],
+    });
+  }
+
+  findTheologicalPositionDefinitionById(id: string): Promise<TheologicalPositionDefinition | null> {
+    return this.prisma.theologicalPositionDefinition.findUnique({ where: { id } });
+  }
+
+  updateTheologicalPositionDefinitionStatus(
+    id: string,
+    update: DefinitionStatusUpdate,
+  ): Promise<TheologicalPositionDefinition> {
+    return this.prisma.theologicalPositionDefinition.update({ where: { id }, data: update });
   }
 }
