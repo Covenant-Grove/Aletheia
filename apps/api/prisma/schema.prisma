@@ -33,6 +33,8 @@ model User {
   mfaSetupChallenges      MfaSetupChallenge[]
   mfaLoginChallenges      MfaLoginChallenge[]
   generatedReports        OfficialReport[]
+  authoredEvidenceSubmissions  EvidenceSubmission[] @relation("EvidenceSubmissionAuthor")
+  validatedEvidenceSubmissions EvidenceSubmission[] @relation("EvidenceSubmissionValidator")
 
   @@map("users")
 }
@@ -180,6 +182,7 @@ model Family {
   exportJobs         DataExportJob[]
   pedagogicalProfiles PedagogicalProfile[]
   theologicalProfiles TheologicalProfile[]
+  evidenceSubmissions EvidenceSubmission[]
 
   @@map("families")
 }
@@ -229,6 +232,7 @@ model Learner {
   complianceRequirements ComplianceRequirement[]
   officialReports    OfficialReport[]
   accessGrant        LearnerAccessGrant?
+  evidenceSubmissions EvidenceSubmission[]
 
   @@index([familyId])
   @@index([familyId, archivedAt])
@@ -959,6 +963,7 @@ model CompetencyDefinition {
   curriculumLinks CurriculumDefinitionCompetency[]
   activityLinks ActivityDefinitionCompetency[]
   progressionPolicies ProgressionPolicy[]
+  evidenceSubmissionLinks EvidenceSubmissionCompetency[]
 
   @@unique([code, version])
   @@index([code])
@@ -1127,6 +1132,7 @@ model EvidenceTypeDefinition {
   deprecatedAt  DateTime?        @map("deprecated_at") @db.Timestamptz
 
   activityLinks ActivityDefinitionEvidenceType[]
+  evidenceSubmissions EvidenceSubmission[]
 
   @@unique([code, version])
   @@index([code])
@@ -1469,4 +1475,80 @@ model ProgressionPolicy {
   @@index([competencyDefinitionId])
   @@index([curriculumDefinitionId])
   @@map("progression_policies")
+}
+
+// Evidence submission (issue #96 Fase 2, section 9): a learner's actual
+// evidence record -- USER DATA, not a Definition/Version catalog table
+// (contrast with EvidenceTypeDefinition, which is the platform's catalog
+// of *kinds* of evidence). Deliberately NOT wired into LearningObjective/
+// LearningRecord -- whether evidence submissions eventually unify with
+// those is a human-approved product decision, out of scope here.
+//
+// Content reuses the exact shape PortfolioItem already established
+// (fileUrl/textContent/mimeType/fileSizeBytes/storageKey/checksumSha256)
+// rather than inventing new file handling.
+//
+// Multi-competency support ("uma evidência pode validar várias
+// competências") is a real join table (EvidenceSubmissionCompetency),
+// not an array column, per section 30 -- and critically, that join table
+// snapshots the *specific competency version row* (by FK, which is
+// immutable once created under the Definition/Version pattern) plus a
+// denormalized `competencyVersion` int for cheap readability. A later
+// competency version bump creates a *new* CompetencyDefinition row; the
+// join keeps pointing at the original row, so "evidência referencia
+// versão da competência avaliada" holds forever, and Restrict on the FK
+// means a competency can never be hard-deleted out from under existing
+// evidence ("evidência não é apagada quando currículo muda").
+model EvidenceSubmission {
+  id                String                   @id @default(uuid()) @db.Uuid
+  familyId          String                   @map("family_id") @db.Uuid
+  learnerId         String                   @map("learner_id") @db.Uuid
+  evidenceTypeId    String                   @map("evidence_type_id") @db.Uuid
+  authorId          String                   @map("author_id") @db.Uuid
+  textContent       String?                  @map("text_content")
+  fileUrl           String?                  @map("file_url")
+  storageKey        String?                  @unique @map("storage_key")
+  mimeType          String?                  @map("mime_type")
+  fileSizeBytes     Int?                     @map("file_size_bytes")
+  checksumSha256    String?                  @map("checksum_sha256")
+  validationStatus  EvidenceValidationStatus @default(UNVALIDATED) @map("validation_status")
+  validatedByUserId String?                  @map("validated_by_user_id") @db.Uuid
+  validatedAt       DateTime?                @map("validated_at") @db.Timestamptz
+  createdAt         DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+
+  family       Family                         @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  learner      Learner                        @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  evidenceType EvidenceTypeDefinition         @relation(fields: [evidenceTypeId], references: [id], onDelete: Restrict)
+  author       User                           @relation("EvidenceSubmissionAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  validatedBy  User?                          @relation("EvidenceSubmissionValidator", fields: [validatedByUserId], references: [id], onDelete: SetNull)
+  competencies EvidenceSubmissionCompetency[]
+
+  @@index([familyId])
+  @@index([familyId, learnerId])
+  @@index([evidenceTypeId])
+  @@map("evidence_submissions")
+}
+
+enum EvidenceValidationStatus {
+  UNVALIDATED
+  VALIDATED
+  REJECTED
+
+  @@map("evidence_validation_statuses")
+}
+
+model EvidenceSubmissionCompetency {
+  id                     String   @id @default(uuid()) @db.Uuid
+  evidenceSubmissionId   String   @map("evidence_submission_id") @db.Uuid
+  competencyDefinitionId String   @map("competency_definition_id") @db.Uuid
+  competencyVersion      Int      @map("competency_version")
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  evidenceSubmission   EvidenceSubmission   @relation(fields: [evidenceSubmissionId], references: [id], onDelete: Cascade)
+  competencyDefinition CompetencyDefinition @relation(fields: [competencyDefinitionId], references: [id], onDelete: Restrict)
+
+  @@unique([evidenceSubmissionId, competencyDefinitionId])
+  @@index([evidenceSubmissionId])
+  @@index([competencyDefinitionId])
+  @@map("evidence_submission_competencies")
 }
