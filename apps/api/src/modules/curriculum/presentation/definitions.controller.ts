@@ -17,6 +17,8 @@ import {
   createActivityDefinitionSchema,
   addActivityDefinitionCompetencySchema,
   addActivityDefinitionEvidenceTypeSchema,
+  createTheologicalTraditionDefinitionSchema,
+  createTheologicalPositionDefinitionSchema,
   transitionDefinitionStatusSchema,
   type CreateLearningDomainOutput,
   type LearningDomainResponseDto,
@@ -50,6 +52,10 @@ import {
   type ActivityDefinitionCompetencyResponseDto,
   type AddActivityDefinitionEvidenceTypeOutput,
   type ActivityDefinitionEvidenceTypeResponseDto,
+  type CreateTheologicalTraditionDefinitionOutput,
+  type TheologicalTraditionDefinitionResponseDto,
+  type CreateTheologicalPositionDefinitionOutput,
+  type TheologicalPositionDefinitionResponseDto,
   type TransitionDefinitionStatusDto,
 } from '@aletheia/contracts';
 import { JwtAuthGuard, PlatformAdminGuard } from '../../../platform/auth/index.js';
@@ -419,5 +425,57 @@ export class DefinitionsController {
     @Param('activityId') activityId: string,
   ): Promise<ActivityDefinitionEvidenceTypeResponseDto[]> {
     return this.definitionsService.listActivityDefinitionEvidenceTypes(activityId);
+  }
+
+  // Theological Tradition Definitions
+  @Post('theological-tradition-definitions')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a theological tradition definition' })
+  async createTheologicalTraditionDefinition(
+    @Body(new ZodValidationPipe(createTheologicalTraditionDefinitionSchema))
+    dto: CreateTheologicalTraditionDefinitionOutput,
+  ): Promise<TheologicalTraditionDefinitionResponseDto> {
+    return this.definitionsService.createTheologicalTraditionDefinition(dto);
+  }
+
+  @Get('theological-tradition-definitions')
+  @ApiOperation({ summary: 'List theological tradition definitions' })
+  async listTheologicalTraditionDefinitions(): Promise<TheologicalTraditionDefinitionResponseDto[]> {
+    return this.definitionsService.listTheologicalTraditionDefinitions();
+  }
+
+  @Patch('theological-tradition-definitions/:id/status')
+  @ApiOperation({ summary: 'Transition a theological tradition definition status' })
+  async transitionTheologicalTraditionDefinitionStatus(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(transitionDefinitionStatusSchema)) dto: TransitionDefinitionStatusDto,
+  ): Promise<TheologicalTraditionDefinitionResponseDto> {
+    return this.definitionsService.transitionTheologicalTraditionDefinitionStatus(id, dto.status);
+  }
+
+  // Theological Position Definitions
+  @Post('theological-position-definitions')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a theological position definition' })
+  async createTheologicalPositionDefinition(
+    @Body(new ZodValidationPipe(createTheologicalPositionDefinitionSchema))
+    dto: CreateTheologicalPositionDefinitionOutput,
+  ): Promise<TheologicalPositionDefinitionResponseDto> {
+    return this.definitionsService.createTheologicalPositionDefinition(dto);
+  }
+
+  @Get('theological-position-definitions')
+  @ApiOperation({ summary: 'List theological position definitions' })
+  async listTheologicalPositionDefinitions(): Promise<TheologicalPositionDefinitionResponseDto[]> {
+    return this.definitionsService.listTheologicalPositionDefinitions();
+  }
+
+  @Patch('theological-position-definitions/:id/status')
+  @ApiOperation({ summary: 'Transition a theological position definition status' })
+  async transitionTheologicalPositionDefinitionStatus(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(transitionDefinitionStatusSchema)) dto: TransitionDefinitionStatusDto,
+  ): Promise<TheologicalPositionDefinitionResponseDto> {
+    return this.definitionsService.transitionTheologicalPositionDefinitionStatus(id, dto.status);
   }
 }

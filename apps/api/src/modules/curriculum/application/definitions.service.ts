@@ -17,6 +17,8 @@ import type {
   ActivityDefinition,
   ActivityDefinitionCompetency,
   ActivityDefinitionEvidenceType,
+  TheologicalTraditionDefinition,
+  TheologicalPositionDefinition,
 } from '@prisma/client';
 import type {
   CreateLearningDomainOutput,
@@ -51,6 +53,10 @@ import type {
   ActivityDefinitionCompetencyResponseDto,
   AddActivityDefinitionEvidenceTypeOutput,
   ActivityDefinitionEvidenceTypeResponseDto,
+  CreateTheologicalTraditionDefinitionOutput,
+  TheologicalTraditionDefinitionResponseDto,
+  CreateTheologicalPositionDefinitionOutput,
+  TheologicalPositionDefinitionResponseDto,
   DefinitionStatus,
 } from '@aletheia/contracts';
 import { DefinitionsRepository } from '../infrastructure/definitions.repository.js';
@@ -391,6 +397,58 @@ export class DefinitionsService {
     return rows.map((row) => this.toActivityDefinitionEvidenceTypeDto(row));
   }
 
+  // Theological Tradition Definition
+  async createTheologicalTraditionDefinition(
+    dto: CreateTheologicalTraditionDefinitionOutput,
+  ): Promise<TheologicalTraditionDefinitionResponseDto> {
+    const row = await this.withWriteErrorMapping(() =>
+      this.repository.createTheologicalTraditionDefinition(dto),
+    );
+    return this.toTheologicalTraditionDefinitionDto(row);
+  }
+
+  async listTheologicalTraditionDefinitions(): Promise<TheologicalTraditionDefinitionResponseDto[]> {
+    const rows = await this.repository.listTheologicalTraditionDefinitions();
+    return rows.map((row) => this.toTheologicalTraditionDefinitionDto(row));
+  }
+
+  async transitionTheologicalTraditionDefinitionStatus(
+    id: string,
+    status: DefinitionStatus,
+  ): Promise<TheologicalTraditionDefinitionResponseDto> {
+    const existing = await this.repository.findTheologicalTraditionDefinitionById(id);
+    if (!existing) throw new NotFoundException('Theological tradition definition not found.');
+    const update = computeStatusTransition(existing.status as DefinitionStatus, status);
+    const row = await this.repository.updateTheologicalTraditionDefinitionStatus(id, update);
+    return this.toTheologicalTraditionDefinitionDto(row);
+  }
+
+  // Theological Position Definition
+  async createTheologicalPositionDefinition(
+    dto: CreateTheologicalPositionDefinitionOutput,
+  ): Promise<TheologicalPositionDefinitionResponseDto> {
+    const row = await this.withWriteErrorMapping(() =>
+      this.repository.createTheologicalPositionDefinition(dto),
+    );
+    return this.toTheologicalPositionDefinitionDto(row);
+  }
+
+  async listTheologicalPositionDefinitions(): Promise<TheologicalPositionDefinitionResponseDto[]> {
+    const rows = await this.repository.listTheologicalPositionDefinitions();
+    return rows.map((row) => this.toTheologicalPositionDefinitionDto(row));
+  }
+
+  async transitionTheologicalPositionDefinitionStatus(
+    id: string,
+    status: DefinitionStatus,
+  ): Promise<TheologicalPositionDefinitionResponseDto> {
+    const existing = await this.repository.findTheologicalPositionDefinitionById(id);
+    if (!existing) throw new NotFoundException('Theological position definition not found.');
+    const update = computeStatusTransition(existing.status as DefinitionStatus, status);
+    const row = await this.repository.updateTheologicalPositionDefinitionStatus(id, update);
+    return this.toTheologicalPositionDefinitionDto(row);
+  }
+
   // Helpers
   private async requireCurriculumDefinition(id: string): Promise<void> {
     const existing = await this.repository.findCurriculumDefinitionById(id);
@@ -663,6 +721,44 @@ export class DefinitionsService {
       activityId: row.activityId,
       evidenceTypeId: row.evidenceTypeId,
       createdAt: row.createdAt.toISOString(),
+    };
+  }
+
+  private toTheologicalTraditionDefinitionDto(
+    row: TheologicalTraditionDefinition,
+  ): TheologicalTraditionDefinitionResponseDto {
+    return {
+      id: row.id,
+      code: row.code,
+      version: row.version,
+      status: row.status as DefinitionStatus,
+      schemaVersion: row.schemaVersion,
+      name: row.name,
+      description: row.description,
+      metadata: row.metadata as Record<string, unknown>,
+      createdAt: row.createdAt.toISOString(),
+      publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
+      deprecatedAt: row.deprecatedAt ? row.deprecatedAt.toISOString() : null,
+    };
+  }
+
+  private toTheologicalPositionDefinitionDto(
+    row: TheologicalPositionDefinition,
+  ): TheologicalPositionDefinitionResponseDto {
+    return {
+      id: row.id,
+      code: row.code,
+      version: row.version,
+      status: row.status as DefinitionStatus,
+      schemaVersion: row.schemaVersion,
+      traditionId: row.traditionId,
+      topic: row.topic,
+      name: row.name,
+      description: row.description,
+      metadata: row.metadata as Record<string, unknown>,
+      createdAt: row.createdAt.toISOString(),
+      publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
+      deprecatedAt: row.deprecatedAt ? row.deprecatedAt.toISOString() : null,
     };
   }
 }
