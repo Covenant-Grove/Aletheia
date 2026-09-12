@@ -1362,7 +1362,12 @@ model TheologicalPositionDefinition {
   version       Int              @default(1)
   status        DefinitionStatus @default(DRAFT)
   schemaVersion String           @default("1.0.0") @map("schema_version")
-  traditionId   String           @map("tradition_id") @db.Uuid
+  // Nullable (Fase 3, issue #96 section 15): cross-cutting eschatological
+  // schools of thought (premillennialism, amillennialism, preterism, ...)
+  // aren't owned by one denomination/tradition, unlike most doctrinal
+  // positions -- see the comment in packages/contracts/src/
+  // theological-taxonomy.ts for the full reasoning.
+  traditionId   String?          @map("tradition_id") @db.Uuid
   topic         String
   name          String
   description   String?
@@ -1371,7 +1376,7 @@ model TheologicalPositionDefinition {
   publishedAt   DateTime?        @map("published_at") @db.Timestamptz
   deprecatedAt  DateTime?        @map("deprecated_at") @db.Timestamptz
 
-  tradition     TheologicalTraditionDefinition @relation(fields: [traditionId], references: [id], onDelete: Restrict)
+  tradition     TheologicalTraditionDefinition? @relation(fields: [traditionId], references: [id], onDelete: Restrict)
 
   @@unique([code, version])
   @@index([code])
