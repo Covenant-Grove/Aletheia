@@ -68,12 +68,13 @@ describe('Eschatology taxonomy as data (real Postgres)', () => {
   });
 
   it('supports four mutually-exclusive millennial views all PUBLISHED simultaneously, none privileged', async () => {
-    const suffix = Date.now();
+    const suffix = `${Date.now()}_${Math.random().toString(36).slice(2).toUpperCase()}`;
+    const topic = `eschatology.millennium.test.${suffix}`;
     const positions = await Promise.all([
-      createEschatologyPosition(`TEST.MILLENNIUM.HISTORIC_PREMIL.${suffix}`, 'eschatology.millennium.test', 'Pré-milenismo histórico'),
-      createEschatologyPosition(`TEST.MILLENNIUM.DISPENSATIONAL_PREMIL.${suffix}`, 'eschatology.millennium.test', 'Pré-milenismo dispensacionalista'),
-      createEschatologyPosition(`TEST.MILLENNIUM.AMIL.${suffix}`, 'eschatology.millennium.test', 'Amilenismo'),
-      createEschatologyPosition(`TEST.MILLENNIUM.POSTMIL.${suffix}`, 'eschatology.millennium.test', 'Pós-milenismo'),
+      createEschatologyPosition(`TEST.MILLENNIUM.HISTORIC_PREMIL.${suffix}`, topic, 'Pré-milenismo histórico'),
+      createEschatologyPosition(`TEST.MILLENNIUM.DISPENSATIONAL_PREMIL.${suffix}`, topic, 'Pré-milenismo dispensacionalista'),
+      createEschatologyPosition(`TEST.MILLENNIUM.AMIL.${suffix}`, topic, 'Amilenismo'),
+      createEschatologyPosition(`TEST.MILLENNIUM.POSTMIL.${suffix}`, topic, 'Pós-milenismo'),
     ]);
 
     // Publish all four -- the whole point is that the engine (the DB
@@ -95,22 +96,18 @@ describe('Eschatology taxonomy as data (real Postgres)', () => {
       .expect(200);
 
     const publishedOnTopic = listed.body.filter(
-      (row: { topic: string; status: string }) =>
-        row.topic === 'eschatology.millennium.test' && row.status === 'PUBLISHED',
+      (row: { topic: string; status: string }) => row.topic === topic && row.status === 'PUBLISHED',
     );
     expect(publishedOnTopic).toHaveLength(4);
   });
 
   it('supports four mutually-exclusive Revelation interpretive schools, a second independent axis on the same topic-grouping mechanism', async () => {
-    const suffix = Date.now();
+    const suffix = `${Date.now()}_${Math.random().toString(36).slice(2).toUpperCase()}`;
+    const topic = `eschatology.revelation_interpretation.test.${suffix}`;
     const schools = ['PRETERISM', 'HISTORICISM', 'FUTURISM', 'IDEALISM'];
     const created = await Promise.all(
       schools.map((school) =>
-        createEschatologyPosition(
-          `TEST.REVELATION_INTERPRETATION.${school}.${suffix}`,
-          'eschatology.revelation_interpretation.test',
-          school,
-        ),
+        createEschatologyPosition(`TEST.REVELATION_INTERPRETATION.${school}.${suffix}`, topic, school),
       ),
     );
 
@@ -127,8 +124,7 @@ describe('Eschatology taxonomy as data (real Postgres)', () => {
       .set('Cookie', adminCookie)
       .expect(200);
     const publishedOnTopic = listed.body.filter(
-      (row: { topic: string; status: string }) =>
-        row.topic === 'eschatology.revelation_interpretation.test' && row.status === 'PUBLISHED',
+      (row: { topic: string; status: string }) => row.topic === topic && row.status === 'PUBLISHED',
     );
     expect(publishedOnTopic).toHaveLength(4);
   });
