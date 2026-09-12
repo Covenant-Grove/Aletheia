@@ -484,7 +484,7 @@ export class DefinitionsRepository {
         version: dto.version,
         status: dto.status,
         schemaVersion: dto.schemaVersion,
-        traditionId: dto.traditionId,
+        traditionId: dto.traditionId ?? null,
         topic: dto.topic,
         name: dto.name,
         description: dto.description ?? null,
