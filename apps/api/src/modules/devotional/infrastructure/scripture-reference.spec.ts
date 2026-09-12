@@ -41,7 +41,7 @@ describe('parseScriptureReference', () => {
       expect(parseScriptureReference('1 Coríntios 13:4')).toEqual({ usfm: '1CO.13.4' });
     });
 
-    it('parses a roman-numeral-free "i/ii" Portuguese variant', () => {
+    it('parses the Portuguese roman-numeral "I/II" convention (e.g. "II Timóteo")', () => {
       expect(parseScriptureReference('II Timóteo 3:16')).toEqual({ usfm: '2TI.3.16' });
     });
 
