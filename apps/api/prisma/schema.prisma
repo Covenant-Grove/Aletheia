@@ -1669,3 +1669,73 @@ model BibleTranslationDefinition {
   @@index([youVersionId])
   @@map("bible_translation_definitions")
 }
+
+// Curriculum pack (issue #96 Fase 4, section 27): a bundle/portability
+// concept, not a new content type -- every individual definition table a
+// pack would bundle already exists (LearningDomain, CompetencyDefinition,
+// LearningPath, SkillDefinition, RubricDefinition, EvidenceTypeDefinition,
+// ActivityDefinition, CurriculumDefinition, PedagogicalModelDefinition,
+// TheologicalTraditionDefinition/TheologicalPositionDefinition,
+// BibleTranslationDefinition). A pack itself follows the same
+// Definition/Version pattern as everything else. Its manifest
+// (CurriculumPackItem) is a real join table listing which
+// (definitionType, code, version) tuples belong to the pack -- not an
+// array of IDs, since the whole point of a pack is to be portable across
+// databases where IDs won't match (section 28). Packs reference other
+// packs they depend on (CurriculumPackDependency) by (code, version)
+// value, not a hard FK -- a dependency may legitimately not exist yet in
+// this database (that's exactly what import's "missing dependency"
+// detection checks for).
+model CurriculumPack {
+  id            String           @id @default(uuid()) @db.Uuid
+  code          String
+  version       Int              @default(1)
+  status        DefinitionStatus @default(DRAFT)
+  schemaVersion String           @default("1.0.0") @map("schema_version")
+  name          String
+  description   String?
+  metadata      Json             @default("{}")
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  publishedAt   DateTime?        @map("published_at") @db.Timestamptz
+  deprecatedAt  DateTime?        @map("deprecated_at") @db.Timestamptz
+
+  items        CurriculumPackItem[]
+  dependencies CurriculumPackDependency[]
+
+  @@unique([code, version])
+  @@index([code])
+  @@index([status])
+  @@map("curriculum_packs")
+}
+
+model CurriculumPackItem {
+  id             String   @id @default(uuid()) @db.Uuid
+  packId         String   @map("pack_id") @db.Uuid
+  definitionType String   @map("definition_type")
+  code           String
+  version        Int
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  pack CurriculumPack @relation(fields: [packId], references: [id], onDelete: Cascade)
+
+  @@unique([packId, definitionType, code, version])
+  @@index([packId])
+  @@map("curriculum_pack_items")
+}
+
+// Soft reference by (code, version) value -- deliberately NOT a hard FK
+// to another CurriculumPack row, since a dependency can be declared
+// before (or without ever having) the depended-on pack present locally.
+model CurriculumPackDependency {
+  id               String   @id @default(uuid()) @db.Uuid
+  packId           String   @map("pack_id") @db.Uuid
+  dependsOnCode    String   @map("depends_on_code")
+  dependsOnVersion Int      @map("depends_on_version")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  pack CurriculumPack @relation(fields: [packId], references: [id], onDelete: Cascade)
+
+  @@unique([packId, dependsOnCode, dependsOnVersion])
+  @@index([packId])
+  @@map("curriculum_pack_dependencies")
+}
