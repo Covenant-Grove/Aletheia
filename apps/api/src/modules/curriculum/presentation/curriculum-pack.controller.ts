@@ -12,21 +12,27 @@ import {
   type AddCurriculumPackDependencyOutput,
   type CurriculumPackDependencyResponseDto,
   type TransitionDefinitionStatusDto,
+  type CurriculumPackExportDocument,
 } from '@aletheia/contracts';
 import { JwtAuthGuard, PlatformAdminGuard } from '../../../platform/auth/index.js';
 import { ZodValidationPipe } from '../../../platform/validation/index.js';
 import { CurriculumPackService } from '../application/curriculum-pack.service.js';
+import { CurriculumPackExportService } from '../application/curriculum-pack-export.service.js';
 
 // Admin CRUD for CurriculumPack + manifest + dependencies (issue #96
-// Fase 4, section 27). Platform-wide, not family-scoped -- same
-// PlatformAdminGuard as DefinitionsController. Export/import
-// (section 28) are separate follow-up PRs.
+// Fase 4, section 27), plus export (section 28, read half). Platform-
+// wide, not family-scoped -- same PlatformAdminGuard as
+// DefinitionsController. Import (section 28, write half) is a separate
+// follow-up PR.
 @ApiTags('Curriculum Packs (Admin)')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, PlatformAdminGuard)
 @Controller({ path: 'admin/curriculum-packs', version: '1' })
 export class CurriculumPackController {
-  constructor(private readonly packService: CurriculumPackService) {}
+  constructor(
+    private readonly packService: CurriculumPackService,
+    private readonly exportService: CurriculumPackExportService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -88,5 +94,11 @@ export class CurriculumPackController {
   @ApiOperation({ summary: 'List a pack\'s dependencies' })
   async listDependencies(@Param('id') id: string): Promise<CurriculumPackDependencyResponseDto[]> {
     return this.packService.listDependencies(id);
+  }
+
+  @Get(':id/export')
+  @ApiOperation({ summary: 'Export a PUBLISHED pack as a portable JSON document' })
+  async exportPack(@Param('id') id: string): Promise<CurriculumPackExportDocument> {
+    return this.exportService.exportPack(id);
   }
 }
