@@ -12,6 +12,7 @@ import { DefinitionsRepository } from './infrastructure/definitions.repository.j
 import { ProfilesRepository } from './infrastructure/profiles.repository.js';
 import { EvidenceSubmissionRepository } from './infrastructure/evidence-submission.repository.js';
 import { AssessmentResultRepository } from './infrastructure/assessment-result.repository.js';
+import { CurriculumPackRepository } from './infrastructure/curriculum-pack.repository.js';
 import { CurriculumService } from './application/curriculum.service.js';
 import { ObjectiveService } from './application/objective.service.js';
 import { DefinitionsService } from './application/definitions.service.js';
@@ -19,6 +20,7 @@ import { ProfilesService } from './application/profiles.service.js';
 import { EvidenceSubmissionService } from './application/evidence-submission.service.js';
 import { AssessmentResultService } from './application/assessment-result.service.js';
 import { BibleTranslationCompareService } from './application/bible-translation-compare.service.js';
+import { CurriculumPackService } from './application/curriculum-pack.service.js';
 import { CURRICULUM_PUBLIC_API } from './application/public-api.js';
 import { CurriculumController } from './presentation/curriculum.controller.js';
 import { ObjectiveController } from './presentation/objective.controller.js';
@@ -27,6 +29,7 @@ import { ProfilesController } from './presentation/profiles.controller.js';
 import { EvidenceSubmissionController } from './presentation/evidence-submission.controller.js';
 import { AssessmentResultController } from './presentation/assessment-result.controller.js';
 import { BibleTranslationCompareController } from './presentation/bible-translation-compare.controller.js';
+import { CurriculumPackController } from './presentation/curriculum-pack.controller.js';
 
 @Module({
   imports: [DatabaseModule, DevotionalModule],
@@ -38,6 +41,7 @@ import { BibleTranslationCompareController } from './presentation/bible-translat
     EvidenceSubmissionController,
     AssessmentResultController,
     BibleTranslationCompareController,
+    CurriculumPackController,
   ],
   providers: [
     CurriculumRepository,
@@ -51,6 +55,7 @@ import { BibleTranslationCompareController } from './presentation/bible-translat
     ProfilesRepository,
     EvidenceSubmissionRepository,
     AssessmentResultRepository,
+    CurriculumPackRepository,
     CurriculumService,
     ObjectiveService,
     DefinitionsService,
@@ -58,6 +63,7 @@ import { BibleTranslationCompareController } from './presentation/bible-translat
     EvidenceSubmissionService,
     AssessmentResultService,
     BibleTranslationCompareService,
+    CurriculumPackService,
     {
       provide: CURRICULUM_PUBLIC_API,
       useExisting: CurriculumService,
