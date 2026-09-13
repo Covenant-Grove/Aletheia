@@ -21,6 +21,7 @@ import { EvidenceSubmissionService } from './application/evidence-submission.ser
 import { AssessmentResultService } from './application/assessment-result.service.js';
 import { BibleTranslationCompareService } from './application/bible-translation-compare.service.js';
 import { CurriculumPackService } from './application/curriculum-pack.service.js';
+import { CurriculumPackExportService } from './application/curriculum-pack-export.service.js';
 import { CURRICULUM_PUBLIC_API } from './application/public-api.js';
 import { CurriculumController } from './presentation/curriculum.controller.js';
 import { ObjectiveController } from './presentation/objective.controller.js';
@@ -64,6 +65,7 @@ import { CurriculumPackController } from './presentation/curriculum-pack.control
     AssessmentResultService,
     BibleTranslationCompareService,
     CurriculumPackService,
+    CurriculumPackExportService,
     {
       provide: CURRICULUM_PUBLIC_API,
       useExisting: CurriculumService,
