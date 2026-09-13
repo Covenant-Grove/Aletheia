@@ -13,17 +13,19 @@ import {
   type CurriculumPackDependencyResponseDto,
   type TransitionDefinitionStatusDto,
   type CurriculumPackExportDocument,
+  type CurriculumPackImportReport,
+  importCurriculumPackRequestSchema,
+  type ImportCurriculumPackOutput,
 } from '@aletheia/contracts';
 import { JwtAuthGuard, PlatformAdminGuard } from '../../../platform/auth/index.js';
 import { ZodValidationPipe } from '../../../platform/validation/index.js';
 import { CurriculumPackService } from '../application/curriculum-pack.service.js';
 import { CurriculumPackExportService } from '../application/curriculum-pack-export.service.js';
+import { CurriculumPackImportService } from '../application/curriculum-pack-import.service.js';
 
 // Admin CRUD for CurriculumPack + manifest + dependencies (issue #96
-// Fase 4, section 27), plus export (section 28, read half). Platform-
-// wide, not family-scoped -- same PlatformAdminGuard as
-// DefinitionsController. Import (section 28, write half) is a separate
-// follow-up PR.
+// Fase 4, section 27), plus export/import (section 28). Platform-wide,
+// not family-scoped -- same PlatformAdminGuard as DefinitionsController.
 @ApiTags('Curriculum Packs (Admin)')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, PlatformAdminGuard)
@@ -32,6 +34,7 @@ export class CurriculumPackController {
   constructor(
     private readonly packService: CurriculumPackService,
     private readonly exportService: CurriculumPackExportService,
+    private readonly importService: CurriculumPackImportService,
   ) {}
 
   @Post()
@@ -100,5 +103,14 @@ export class CurriculumPackController {
   @ApiOperation({ summary: 'Export a PUBLISHED pack as a portable JSON document' })
   async exportPack(@Param('id') id: string): Promise<CurriculumPackExportDocument> {
     return this.exportService.exportPack(id);
+  }
+
+  @Post('import')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Import a pack export document (dryRun: true reports without writing)' })
+  async importPack(
+    @Body(new ZodValidationPipe(importCurriculumPackRequestSchema)) dto: ImportCurriculumPackOutput,
+  ): Promise<CurriculumPackImportReport> {
+    return this.importService.importPack(dto.document, dto.dryRun);
   }
 }
